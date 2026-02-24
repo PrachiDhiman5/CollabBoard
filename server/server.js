@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
+import User from './models/User.js';
 import authRoutes from './routes/auth.js';
 import roomRoutes from './routes/rooms.js';
 import postRoutes from './routes/posts.js';
@@ -11,6 +12,12 @@ import profileRoutes from './routes/profile.js';
 import chatRoutes from './routes/chat.js';
 
 dotenv.config();
+
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+    console.error('CRITICAL ERROR: MONGODB_URI is not defined in environment variables.');
+    process.exit(1);
+}
 
 const app = express();
 const server = http.createServer(app);
@@ -194,7 +201,7 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 5000;
 console.log('Attempting to connect to MongoDB...');
-mongoose.connect(process.env.MONGODB_URI)
+mongoose.connect(MONGODB_URI)
     .then(() => {
         console.log('Successfully connected to MongoDB');
         server.listen(PORT, () => {
