@@ -1,7 +1,9 @@
+import dotenv from 'dotenv';
+dotenv.config();
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import http from 'http';
 import { Server } from 'socket.io';
 import User from './models/User.js';
@@ -11,11 +13,15 @@ import postRoutes from './routes/posts.js';
 import profileRoutes from './routes/profile.js';
 import chatRoutes from './routes/chat.js';
 
-dotenv.config();
+// Diagnostic: List all env keys (not values) for debugging Railway deployment
+console.log('Environment Diagnosis:');
+console.log('Current Shell Env Keys:', Object.keys(process.env).filter(key => !key.includes('SECRET') && !key.includes('PASSWORD') && !key.includes('TOKEN')));
 
-const MONGODB_URI = process.env.MONGODB_URI;
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGO_URI || process.env.DATABASE_URL || process.env.MONGODBURL;
+
 if (!MONGODB_URI) {
     console.error('CRITICAL ERROR: MONGODB_URI is not defined in environment variables.');
+    console.error('Expected one of: MONGODB_URI, MONGO_URI, DATABASE_URL, MONGODBURL');
     process.exit(1);
 }
 
