@@ -44,6 +44,11 @@ const Profile = () => {
             newSocket.emit('register-user', user.id || user._id);
         });
 
+        // Real-time notification listener
+        newSocket.on('notification', () => {
+            refreshProfile(); // Trigger a data refresh when a notification arrives
+        });
+
         return () => newSocket.close();
     }, [fetchProfileData]);
 

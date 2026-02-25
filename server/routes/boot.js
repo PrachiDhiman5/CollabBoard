@@ -74,10 +74,13 @@ router.get('/', auth, async (req, res) => {
                 { $limit: 5 }
             ]),
 
-            // 6. Statistics (Counts)
+            // 6. Statistics (Counts & Lists)
             Promise.all([
                 Room.countDocuments({ $or: [{ host: id }, { participants: id }] }),
-                Room.countDocuments({ $or: [{ host: id }, { participants: id }], isPublic: true })
+                Room.countDocuments({ $or: [{ host: id }, { participants: id }], isPublic: true }),
+                Room.find({ $or: [{ host: id }, { participants: id }], isPublic: false })
+                    .select('roomId name')
+                    .lean()
             ]),
 
             // 7. Suggestions (Quick logic)
@@ -132,6 +135,7 @@ router.get('/', auth, async (req, res) => {
                 stats: {
                     totalRooms: stats[0],
                     publicRoomsCount: stats[1],
+                    privateRooms: (stats[2] || []).map(r => ({ id: r.roomId, name: r.name })),
                     isTrending: trendingPost?.userId?.toString() === userId
                 },
                 notifications: user.notifications || [],

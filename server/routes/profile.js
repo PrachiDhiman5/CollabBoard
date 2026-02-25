@@ -157,6 +157,17 @@ router.post('/friend-request/respond', auth, async (req, res) => {
             });
 
             await requester.save();
+        } else if (action === 'reject') {
+            const requester = await User.findById(requesterId);
+            if (requester) {
+                requester.notifications.push({
+                    type: 'friend_request_rejected',
+                    from: userId,
+                    fromName: user.name,
+                    text: `${user.name} declined your friend request`
+                });
+                await requester.save();
+            }
         }
 
         // Update the current user's notification that triggered this

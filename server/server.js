@@ -8,6 +8,7 @@ import cors from 'cors';
 import http from 'http';
 import { Server } from 'socket.io';
 import User from './models/User.js';
+import Message from './models/Message.js';
 import authRoutes from './routes/auth.js';
 import roomRoutes from './routes/rooms.js';
 import postRoutes from './routes/posts.js';
@@ -182,6 +183,16 @@ io.on('connection', (socket) => {
                 text,
                 createdAt: new Date()
             });
+
+            // Database Persistence
+            if (socket.userId) {
+                const newMessage = new Message({
+                    sender: socket.userId,
+                    receiver: to,
+                    text: text
+                });
+                await newMessage.save();
+            }
 
             // Persistence as notification
             if (socket.userId) {
