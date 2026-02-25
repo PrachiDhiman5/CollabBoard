@@ -30,6 +30,7 @@ const server = http.createServer(app);
 
 const allowedOrigins = [
     process.env.CLIENT_URL,
+    "https://collab-board-rosy.vercel.app",
     "http://localhost:5174",
     "http://localhost:5173"
 ].filter(Boolean);
