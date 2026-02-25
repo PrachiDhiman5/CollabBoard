@@ -2,42 +2,26 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Heart, MessageCircle, Share2, ThumbsDown, TrendingUp, Hash, ArrowLeft, Trophy, Crown, Star } from 'lucide-react';
 import { postAPI } from '../services/api';
+import { useData } from '../context/DataContext';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
 const Gallery = () => {
-    const [posts, setPosts] = useState([]);
-    const [trending, setTrending] = useState({ trendingPost: null, topHashtags: [] });
-    const [leaderboard, setLeaderboard] = useState([]);
+    const { posts, trending, leaderboard, fetchPosts, refreshPosts, loading } = useData();
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     useEffect(() => {
-        fetchData();
-        const interval = setInterval(fetchData, 30000); // Poll every 30s
+        fetchPosts();
+        const interval = setInterval(() => fetchPosts(true), 60000); // Poll every 60s (background refresh)
         return () => clearInterval(interval);
-    }, []);
-
-    const fetchData = async () => {
-        try {
-            const [postsRes, trendingRes, leaderRes] = await Promise.all([
-                postAPI.getPosts(),
-                postAPI.getTrending(),
-                postAPI.getLeaderboard()
-            ]);
-            setPosts(postsRes.data?.posts && Array.isArray(postsRes.data.posts) ? postsRes.data.posts : []);
-            setTrending(trendingRes.data?.topHashtags ? trendingRes.data : { trendingPost: null, topHashtags: [] });
-            setLeaderboard(Array.isArray(leaderRes.data) ? leaderRes.data : []);
-        } catch (err) {
-            console.error("Gallery fetch error", err);
-        }
-    };
+    }, [fetchPosts]);
 
     const handleAction = async (id, action) => {
         try {
             if (action === 'like') await postAPI.likePost(id);
             else if (action === 'dislike') await postAPI.dislikePost(id);
-            fetchData();
+            refreshPosts();
         } catch (err) {
             console.error("Action error", err);
         }
@@ -106,11 +90,11 @@ const Gallery = () => {
 
                         {/* Share Creativity Card */}
                         <div style={{ gridColumn: '1/-1' }}>
-                            <CreatePostCard onRefresh={fetchData} user={user} />
+                            <CreatePostCard onRefresh={refreshPosts} user={user} />
                         </div>
 
                         {Array.isArray(posts) && posts.map(post => (
-                            <PostCard key={post._id} post={post} onAction={handleAction} currentUser={user} onRefresh={fetchData} />
+                            <PostCard key={post._id} post={post} onAction={handleAction} currentUser={user} onRefresh={refreshPosts} />
                         ))}
                     </div>
 

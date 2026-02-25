@@ -3,11 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, LogOut, ArrowRight, Monitor, Settings, Search, Users, Globe, History, Lock, Shield, Pencil } from 'lucide-react';
 import { roomAPI } from '../services/api';
+import { useData } from '../context/DataContext';
 
 const Dashboard = () => {
+    const { history, publicRooms, fetchRooms, refreshRooms, loading: globalLoading } = useData();
     const [loading, setLoading] = useState(false);
-    const [publicRooms, setPublicRooms] = useState([]);
-    const [history, setHistory] = useState([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [showJoinModal, setShowJoinModal] = useState(false);
     const [newRoomName, setNewRoomName] = useState('');
@@ -19,21 +19,8 @@ const Dashboard = () => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
     useEffect(() => {
-        fetchData();
-    }, []);
-
-    const fetchData = async () => {
-        try {
-            const [historyRes, publicRes] = await Promise.all([
-                roomAPI.getRoomHistory(),
-                roomAPI.getPublicRooms()
-            ]);
-            setHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
-            setPublicRooms(Array.isArray(publicRes.data) ? publicRes.data : []);
-        } catch (err) {
-            console.error("Failed to fetch dashboard data", err);
-        }
-    };
+        fetchRooms(); // This will only fetch if data isn't already cached
+    }, [fetchRooms]);
 
     const handleCreateRoom = async (e) => {
         e.preventDefault();
@@ -246,9 +233,15 @@ const Dashboard = () => {
                         ))}
                     </div>
 
-                    {(activeTab === 'history' ? history : publicRooms).length === 0 && (
+                    {Array.isArray(activeTab === 'history' ? history : publicRooms) && (activeTab === 'history' ? history : publicRooms).length === 0 && !globalLoading.rooms && (
                         <div style={{ textAlign: 'center', padding: '4rem 0' }}>
                             <p style={{ color: '#b2bec3', fontWeight: 600 }}>No workspaces found here yet.</p>
+                        </div>
+                    )}
+
+                    {globalLoading.rooms && (activeTab === 'history' ? !history : !publicRooms) && (
+                        <div style={{ textAlign: 'center', padding: '4rem 0' }}>
+                            <p style={{ color: '#8e8ffa', fontWeight: 600 }}>Loading workspaces...</p>
                         </div>
                     )}
                 </div>

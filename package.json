@@ -1,0 +1,9 @@
+{
+    "name": "collabboard-root",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "start": "cd server && npm start",
+        "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+    }
+}

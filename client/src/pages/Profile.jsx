@@ -7,20 +7,30 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { profileAPI } from '../services/api';
+import { useData } from '../context/DataContext';
 import confetti from 'canvas-confetti';
 import { io } from 'socket.io-client';
 import ChatWindow from '../components/Social/ChatWindow';
 
 const Profile = () => {
-    const [stats, setStats] = useState(null);
-    const [suggestions, setSuggestions] = useState([]);
-    const [notifications, setNotifications] = useState([]);
-    const [friends, setFriends] = useState([]);
+    const { profileData, fetchProfileData, refreshProfile, loading: globalLoading } = useData();
+    const { stats, suggestions, notifications, friends } = profileData;
     const [activeChat, setActiveChat] = useState(null);
     const [socket, setSocket] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
+
+    useEffect(() => {
+        if (stats?.isTrending) {
+            confetti({
+                particleCount: 150,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#ffd700', '#f9ca24', '#ffffff']
+            });
+        }
+    }, [stats?.isTrending]);
 
     useEffect(() => {
         console.log("Profile Mounted. Token:", localStorage.getItem('token') ? "EXISTS" : "MISSING");
@@ -35,58 +45,12 @@ const Profile = () => {
         });
 
         return () => newSocket.close();
-    }, []);
-
-    const fetchProfileData = async () => {
-        setLoading(true);
-
-        try {
-            // Stats
-            try {
-                const res = await profileAPI.getStats();
-                setStats(res.data);
-                if (res.data.isTrending) triggerConfetti();
-            } catch (e) { console.error("Stats Error:", e); }
-
-            // Suggestions
-            try {
-                const res = await profileAPI.getSuggestedFriends();
-                setSuggestions(res.data);
-            } catch (e) { console.error("Suggestions Error:", e); }
-
-            // Notifications
-            try {
-                const res = await profileAPI.getNotifications();
-                setNotifications(res.data);
-            } catch (e) { console.error("Notify Error:", e); }
-
-            // Friends
-            try {
-                const res = await profileAPI.getFriends();
-                setFriends(res.data);
-            } catch (e) { console.error("Friends Error:", e); }
-
-        } catch (err) {
-            console.error("General Fetch Error:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const triggerConfetti = () => {
-        confetti({
-            particleCount: 150,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#ffd700', '#f9ca24', '#ffffff']
-        });
-    };
+    }, [fetchProfileData]);
 
     const handleFriendRequest = async (userId) => {
         try {
             await profileAPI.sendFriendRequest(userId);
-            // Re-fetch to update button states (Request Sent)
-            fetchProfileData();
+            refreshProfile(); // Update global state
         } catch (err) {
             console.error(err);
         }
@@ -95,13 +59,13 @@ const Profile = () => {
     const handleResponse = async (requestId, action) => {
         try {
             await profileAPI.respondToFriendRequest(requestId, action);
-            fetchProfileData();
+            refreshProfile(); // Update global state
         } catch (err) {
             console.error(err);
         }
     };
 
-    if (loading) return (
+    if (globalLoading.profile && !stats) return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#fdfbff' }}>
             <div style={{ textAlign: 'center' }}>
                 <h2 style={{ color: '#8e8ffa', fontWeight: 900 }}>Loading Profile...</h2>
