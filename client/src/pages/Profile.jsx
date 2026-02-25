@@ -6,7 +6,7 @@ import {
     Check, X, Users, Zap
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { profileAPI } from '../services/api';
+import { profileAPI, SOCKET_URL } from '../services/api';
 import { useData } from '../context/DataContext';
 import confetti from 'canvas-confetti';
 import { io } from 'socket.io-client';
@@ -37,7 +37,7 @@ const Profile = () => {
         console.log("LocalUser:", user);
         fetchProfileData();
 
-        const newSocket = io('http://localhost:5000');
+        const newSocket = io(SOCKET_URL);
         setSocket(newSocket);
 
         newSocket.on('connect', () => {

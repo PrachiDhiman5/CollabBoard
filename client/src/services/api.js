@@ -5,6 +5,9 @@ if (baseURL && !baseURL.endsWith('/api')) {
     baseURL = baseURL.endsWith('/') ? `${baseURL}api` : `${baseURL}/api`;
 }
 
+// Derive socket URL from base URL (remove /api)
+export const SOCKET_URL = baseURL.replace(/\/api\/?$/, '');
+
 const api = axios.create({
     baseURL,
 });

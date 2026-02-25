@@ -7,7 +7,7 @@ import Cursor from '../components/Whiteboard/Cursor';
 import VoiceManager from '../components/Whiteboard/VoiceManager';
 import ScreenShareManager from '../components/Whiteboard/ScreenShareManager';
 import ShareToGallery from '../components/Whiteboard/ShareToGallery';
-import { roomAPI } from '../services/api';
+import { roomAPI, SOCKET_URL } from '../services/api';
 import io from 'socket.io-client';
 import { Users, ChevronLeft, Share2 } from 'lucide-react';
 
@@ -51,12 +51,7 @@ const Whiteboard = () => {
         };
         fetchRoom();
 
-        // Use Socket URL from env or derive from API URL (removing /api)
-        const socketURL = import.meta.env.VITE_SOCKET_URL ||
-            import.meta.env.VITE_API_URL?.replace('/api', '') ||
-            'http://localhost:5000';
-
-        socketRef.current = io(socketURL);
+        socketRef.current = io(SOCKET_URL);
         socketRef.current.emit('join-room', { roomId, user });
 
         socketRef.current.on('elements-sync', (syncedElements) => setElements(syncedElements));
