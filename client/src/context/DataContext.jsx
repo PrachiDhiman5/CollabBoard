@@ -124,7 +124,7 @@ export const DataProvider = ({ children }) => {
                 profileAPI.getNotifications(),
                 profileAPI.getFriends()
             ]);
-            setProfileData(statsRes.data);
+            setProfileData(prev => ({ ...prev, stats: statsRes.data }));
             setSuggestedFriends(suggestRes.data);
             setNotifications(notifRes.data);
             setFriends(friendRes.data);

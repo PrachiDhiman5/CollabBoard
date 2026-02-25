@@ -75,11 +75,11 @@ const Profile = () => {
         }
     };
 
-    if (globalLoading.boot && !stats) return (
+    if ((globalLoading.boot || globalLoading.profile) && !stats) return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#fdfbff' }}>
             <div style={{ textAlign: 'center' }}>
                 <h2 style={{ color: '#8e8ffa', fontWeight: 900 }}>Fast-Tracking...</h2>
-                <p style={{ color: '#b2bec3', fontWeight: 700 }}>Mega-Boot in progress</p>
+                <p style={{ color: '#b2bec3', fontWeight: 700 }}>Updating your profile data</p>
             </div>
         </div>
     );
