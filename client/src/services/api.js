@@ -16,7 +16,7 @@ console.log("DEBUG: API Base URL is:", api.defaults.baseURL);
 
 // Add a request interceptor to include the JWT token
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
     }
