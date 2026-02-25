@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Share2, Type, Hash } from 'lucide-react';
 import { postAPI } from '../../services/api';
+import { useData } from '../../context/DataContext';
 
 const ShareToGallery = ({ isOpen, onClose, canvasRef, user }) => {
+    const { refreshGalleryData } = useData();
     const [caption, setCaption] = useState('');
     const [hashtags, setHashtags] = useState('');
     const [loading, setLoading] = useState(false);
@@ -45,6 +47,9 @@ const ShareToGallery = ({ isOpen, onClose, canvasRef, user }) => {
                 caption,
                 hashtags: hashtagsArray
             });
+
+            // Trigger full refresh for Gallery consistency
+            refreshGalleryData(true);
 
             alert("Posted to Community Gallery!");
             onClose();

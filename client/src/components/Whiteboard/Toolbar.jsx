@@ -30,11 +30,11 @@ const Toolbar = ({ activeTool, setActiveTool, color, setColor, brushSize, setBru
     return (
         <>
             <div style={{
-                position: 'fixed', left: '20px', top: '50%', transform: 'translateY(-50%)',
+                position: 'absolute', left: '20px', top: '50%', transform: 'translateY(-50%)',
                 display: 'flex', flexDirection: 'column', gap: '8px', padding: '10px',
                 backgroundColor: 'white', borderRadius: '24px', boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
                 zIndex: 100, border: '1px solid #edeff2',
-                maxHeight: '85vh', overflowY: 'auto', scrollbarWidth: 'none'
+                maxHeight: '85%', overflowY: 'auto', scrollbarWidth: 'none'
             }}>
                 {tools.map((tool) => (
                     <button
@@ -104,7 +104,7 @@ const Toolbar = ({ activeTool, setActiveTool, color, setColor, brushSize, setBru
 
             {/* Action Bar (Undo/Export/Share) - Consolidated at bottom-left */}
             <div style={{
-                position: 'fixed', bottom: '60px', left: '80px',
+                position: 'absolute', bottom: '30px', left: '80px',
                 display: 'flex', gap: '12px', padding: '10px 24px', backgroundColor: 'white',
                 borderRadius: '50px', boxShadow: '0 8px 30px rgba(0,0,0,0.12)', alignItems: 'center',
                 border: '1px solid #edeff2', zIndex: 101, transition: 'all 0.3s'

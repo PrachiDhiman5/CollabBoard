@@ -28,6 +28,7 @@ const Whiteboard = () => {
     const socketRef = useRef();
     const user = JSON.parse(localStorage.getItem('user') || '{"name": "Anonymous"}');
     const canvasRef = useRef(null);
+    const canvasParentRef = useRef(null);
 
     useEffect(() => {
         const fetchRoom = async () => {
@@ -114,7 +115,7 @@ const Whiteboard = () => {
     };
 
     return (
-        <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', backgroundColor: 'white', display: 'flex' }}>
+        <div style={{ width: '100vw', height: '100dvh', overflow: 'hidden', backgroundColor: 'white', display: 'flex' }}>
             <div style={{ flex: 1, position: 'relative', height: '100%', display: 'flex', flexDirection: 'column' }}>
                 {/* Header info */}
                 <div style={{
@@ -163,7 +164,10 @@ const Whiteboard = () => {
                     </div>
                 </div>
 
-                <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+                <div
+                    ref={canvasParentRef}
+                    style={{ flex: 1, position: 'relative', overflow: 'hidden', backgroundColor: '#f8f9fa' }}
+                >
                     <Toolbar
                         activeTool={activeTool} setActiveTool={setActiveTool}
                         color={color} setColor={setColor}
@@ -183,6 +187,7 @@ const Whiteboard = () => {
                             eraserSize={eraserSize} setEraserSize={setEraserSize}
                             socket={socketRef.current} roomId={roomId} user={user}
                             hostId={roomData?.host?._id || roomData?.host}
+                            containerRef={canvasParentRef}
                         />
                         {Object.entries(cursors).map(([id, pos]) => <Cursor key={id} {...pos} />)}
                     </div>

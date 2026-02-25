@@ -94,7 +94,26 @@ export const DataProvider = ({ children }) => {
         }
     }, [posts.length]);
 
-    const refreshPosts = useCallback((silent = false) => fetchPosts(true, silent === true), [fetchPosts]);
+    // Unified Refresh for Gallery: Syncs Feed, Trending, and Leaderboard in background
+    const refreshGalleryData = useCallback(async (silent = true) => {
+        if (!silent) setLoading(prev => ({ ...prev, boot: true }));
+        try {
+            const [postsRes, trendingRes, leaderboardRes] = await Promise.all([
+                postAPI.getPosts(),
+                postAPI.getTrending(),
+                postAPI.getLeaderboard()
+            ]);
+            setPosts(postsRes.data.posts || []);
+            setTrending(trendingRes.data);
+            setLeaderboard(leaderboardRes.data);
+        } catch (err) {
+            console.error("Unified Gallery refresh failed:", err);
+        } finally {
+            if (!silent) setLoading(prev => ({ ...prev, boot: false }));
+        }
+    }, []);
+
+    const refreshPosts = useCallback((silent = false) => refreshGalleryData(silent === true), [refreshGalleryData]);
 
     const fetchProfileData = useCallback(async (force = false) => {
         if (!force && profileData !== null) return;
@@ -129,11 +148,11 @@ export const DataProvider = ({ children }) => {
     const value = useMemo(() => ({
         history, publicRooms, posts, trending, leaderboard, profileData,
         suggestedFriends, notifications, friends, loading,
-        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, boot
+        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, refreshGalleryData, boot
     }), [
         history, publicRooms, posts, trending, leaderboard, profileData,
         suggestedFriends, notifications, friends, loading,
-        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, boot
+        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, refreshGalleryData, boot
     ]);
 
     return (

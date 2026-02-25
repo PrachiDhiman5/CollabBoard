@@ -1,13 +1,30 @@
 import React, { useLayoutEffect, useRef, useState, useImperativeHandle, forwardRef, useEffect } from 'react';
 
-const Canvas = forwardRef(({ elements, setElements, activeTool, color, brushSize, setBrushSize, eraserSize, setEraserSize, socket, roomId, user, hostId }, ref) => {
+const Canvas = forwardRef(({ elements, setElements, activeTool, color, brushSize, setBrushSize, eraserSize, setEraserSize, socket, roomId, user, hostId, containerRef }, ref) => {
     const canvasRef = useRef(null);
+    const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
     const [isDrawing, setIsDrawing] = useState(false);
     const [cursorPos, setCursorPos] = useState({ x: 0, y: 0, visible: false });
     const [currentElement, setCurrentElement] = useState(null);
     const [history, setHistory] = useState([]);
     const lastCursorUpdate = useRef(0);
     const brushSizeRef = useRef(brushSize);
+
+    // Dynamic Sizing logic
+    useEffect(() => {
+        if (!containerRef?.current) return;
+
+        const updateSize = () => {
+            const { width, height } = containerRef.current.getBoundingClientRect();
+            setDimensions({ width, height });
+        };
+
+        const observer = new ResizeObserver(updateSize);
+        observer.observe(containerRef.current);
+        updateSize();
+
+        return () => observer.disconnect();
+    }, [containerRef]);
 
     // Sync ref with prop
     useEffect(() => {
@@ -342,8 +359,8 @@ const Canvas = forwardRef(({ elements, setElements, activeTool, color, brushSize
         >
             <canvas
                 ref={canvasRef}
-                width={window.innerWidth}
-                height={window.innerHeight}
+                width={dimensions.width}
+                height={dimensions.height}
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}

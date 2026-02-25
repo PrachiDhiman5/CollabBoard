@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
 const Gallery = () => {
-    const { posts: globalPosts, trending, leaderboard, fetchPosts, refreshPosts, loading: globalLoading } = useData();
+    const { posts: globalPosts, trending, leaderboard, fetchPosts, refreshGalleryData, loading: globalLoading } = useData();
     const [posts, setPosts] = useState([]);
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
@@ -19,9 +19,10 @@ const Gallery = () => {
 
     useEffect(() => {
         fetchPosts();
-        const interval = setInterval(() => fetchPosts(true, true), 60000);
+        // Background polling for Trending/Leaderboard/Posts every 30s
+        const interval = setInterval(() => refreshGalleryData(true), 30000);
         return () => clearInterval(interval);
-    }, [fetchPosts]);
+    }, [fetchPosts, refreshGalleryData]);
 
     const handleAction = async (id, action) => {
         const userId = (user._id || user.id);
@@ -57,11 +58,11 @@ const Gallery = () => {
         try {
             if (action === 'like') await postAPI.likePost(id);
             else if (action === 'dislike') await postAPI.dislikePost(id);
-            // Refresh in background to sync with server truth
-            refreshPosts(true);
+            // Refresh EVERYTHING in background to sync with server truth (Trending/Leaderboard/Posts)
+            refreshGalleryData(true);
         } catch (err) {
             console.error("Action error", err);
-            refreshPosts(true); // Rollback on error
+            refreshGalleryData(true); // Rollback/Sync on error
         }
     };
 
