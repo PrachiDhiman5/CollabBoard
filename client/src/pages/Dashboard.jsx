@@ -28,8 +28,8 @@ const Dashboard = () => {
                 roomAPI.getRoomHistory(),
                 roomAPI.getPublicRooms()
             ]);
-            setHistory(historyRes.data);
-            setPublicRooms(publicRes.data);
+            setHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
+            setPublicRooms(Array.isArray(publicRes.data) ? publicRes.data : []);
         } catch (err) {
             console.error("Failed to fetch dashboard data", err);
         }
@@ -203,7 +203,7 @@ const Dashboard = () => {
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '2rem' }}>
-                        {(activeTab === 'history' ? history : publicRooms).map((room) => (
+                        {Array.isArray(activeTab === 'history' ? history : publicRooms) && (activeTab === 'history' ? history : publicRooms).map((room) => (
                             <motion.div
                                 key={room.roomId}
                                 initial={{ opacity: 0, y: 20 }}

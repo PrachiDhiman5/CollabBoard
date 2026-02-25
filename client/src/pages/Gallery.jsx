@@ -25,9 +25,9 @@ const Gallery = () => {
                 postAPI.getTrending(),
                 postAPI.getLeaderboard()
             ]);
-            setPosts(postsRes.data.posts || []); // Fix: Handle paginated response
-            setTrending(trendingRes.data);
-            setLeaderboard(leaderRes.data);
+            setPosts(postsRes.data?.posts && Array.isArray(postsRes.data.posts) ? postsRes.data.posts : []);
+            setTrending(trendingRes.data?.topHashtags ? trendingRes.data : { trendingPost: null, topHashtags: [] });
+            setLeaderboard(Array.isArray(leaderRes.data) ? leaderRes.data : []);
         } catch (err) {
             console.error("Gallery fetch error", err);
         }
@@ -109,7 +109,7 @@ const Gallery = () => {
                             <CreatePostCard onRefresh={fetchData} user={user} />
                         </div>
 
-                        {posts.map(post => (
+                        {Array.isArray(posts) && posts.map(post => (
                             <PostCard key={post._id} post={post} onAction={handleAction} currentUser={user} onRefresh={fetchData} />
                         ))}
                     </div>
@@ -124,7 +124,7 @@ const Gallery = () => {
                                 <h3 style={{ margin: 0, fontWeight: 800 }}>Top Contributors</h3>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                {leaderboard.map((leader, i) => (
+                                {Array.isArray(leaderboard) && leaderboard.map((leader, i) => (
                                     <div key={leader._id} onClick={triggerConfetti} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '10px', borderRadius: '16px', transition: '0.2s' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <div style={{ position: 'relative' }}>
@@ -151,7 +151,7 @@ const Gallery = () => {
                                 <h3 style={{ margin: 0, fontWeight: 800 }}>Trending Tags</h3>
                             </div>
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                                {trending.topHashtags.map(tag => (
+                                {trending?.topHashtags && Array.isArray(trending.topHashtags) && trending.topHashtags.map(tag => (
                                     <div key={tag._id} style={{ padding: '10px 16px', background: '#f8f9fe', borderRadius: '14px', border: '1px solid #f1f2f6', display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         <span style={{ fontWeight: 800, fontSize: '0.85rem', color: '#8e8ffa' }}>#{tag._id}</span>
                                         <span style={{ fontSize: '0.75rem', color: '#b2bec3', fontWeight: 600 }}>{tag.count}</span>
