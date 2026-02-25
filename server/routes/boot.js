@@ -44,25 +44,14 @@ router.get('/', auth, async (req, res) => {
                 .sort({ updatedAt: -1 })
                 .lean(),
 
-            // 4. Trending Data (4h window with fallback)
+            // 4. Trending Data (Strictly All-time Most Liked)
             (async () => {
-                const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
-                let trending = await Post.aggregate([
-                    { $match: { createdAt: { $gte: fourHoursAgo } } },
+                const trending = await Post.aggregate([
                     { $addFields: { likesCount: { $size: "$likes" } } },
                     { $sort: { likesCount: -1 } },
                     { $limit: 1 },
                     { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1, userId: 1 } }
                 ]);
-
-                if (trending.length === 0) {
-                    trending = await Post.aggregate([
-                        { $addFields: { likesCount: { $size: "$likes" } } },
-                        { $sort: { likesCount: -1 } },
-                        { $limit: 1 },
-                        { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1, userId: 1 } }
-                    ]);
-                }
                 return trending;
             })(),
 
