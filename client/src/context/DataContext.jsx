@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { roomAPI, postAPI, profileAPI, bootAPI } from '../services/api';
 
 const DataContext = createContext();
