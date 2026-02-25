@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
 const Gallery = () => {
-    const { posts: globalPosts, trending, leaderboard, fetchPosts, refreshGalleryData, loading: globalLoading } = useData();
+    const { posts: globalPosts, trending, leaderboard, fetchPosts, refreshPosts, refreshGalleryData, loading: globalLoading } = useData();
     const [posts, setPosts] = useState([]);
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || '{}');

@@ -26,8 +26,13 @@ const ShareToGallery = ({ isOpen, onClose, canvasRef, user }) => {
                 canvas.width = width;
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
+
+                // Fix: Fill with white background (JPEGs don't support transparency and default to black)
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+
                 ctx.drawImage(img, 0, 0, width, height);
-                resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compressed JPEG
+                resolve(canvas.toDataURL('image/jpeg', 0.8)); // Slightly higher quality JPEG
             };
             img.src = dataUrl;
         });

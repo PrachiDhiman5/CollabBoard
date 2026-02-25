@@ -52,7 +52,18 @@ const Canvas = forwardRef(({ elements, setElements, activeTool, color, brushSize
         getCanvas: () => canvasRef.current,
         exportImage: () => {
             const canvas = canvasRef.current;
-            const dataURL = canvas.toDataURL('image/png');
+
+            // Create a temp canvas to add white background (for clean local saving)
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = canvas.width;
+            tempCanvas.height = canvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+
+            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+            tempCtx.drawImage(canvas, 0, 0);
+
+            const dataURL = tempCanvas.toDataURL('image/png');
             const link = document.createElement('a');
             link.download = `whiteboard-${roomId}.png`;
             link.href = dataURL;
