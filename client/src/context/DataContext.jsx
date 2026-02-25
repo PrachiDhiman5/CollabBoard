@@ -86,7 +86,7 @@ export const DataProvider = ({ children }) => {
         setLoading(prev => ({ ...prev, posts: true }));
         try {
             const res = await postAPI.getPosts();
-            setPosts(res.data);
+            setPosts(res.data.posts || []);
         } catch (err) {
             console.error("Failed to fetch posts:", err);
         } finally {

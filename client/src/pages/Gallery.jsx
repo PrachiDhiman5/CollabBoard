@@ -53,7 +53,7 @@ const Gallery = () => {
                 </div>
             </nav>
 
-            <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem 4rem' }}>
+            <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '2rem 4rem' }}>
 
                 {/* Hero Spotlight */}
                 {trending?.trendingPost && (
@@ -82,10 +82,10 @@ const Gallery = () => {
                     </motion.div>
                 )}
 
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 350px', gap: '3rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '3.5rem' }}>
 
                     {/* Main Feed */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '2rem', alignContent: 'start' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '2.5rem', alignContent: 'start' }}>
                         <h3 style={{ gridColumn: '1/-1', fontWeight: 800, fontSize: '1.4rem', color: '#2d3436', marginBottom: '0.5rem' }}>Recent Creations</h3>
 
                         {/* Share Creativity Card */}
@@ -233,8 +233,9 @@ const PostCard = ({ post, onAction, currentUser, onRefresh }) => {
     const [comment, setComment] = useState('');
     const [showComments, setShowComments] = useState(false);
 
-    const hasLiked = post.likes.includes(currentUser.id);
-    const hasDisliked = post.dislikes.includes(currentUser.id);
+    const currentUserId = currentUser.id || currentUser._id;
+    const hasLiked = Array.isArray(post.likes) && post.likes.some(id => id.toString() === currentUserId?.toString());
+    const hasDisliked = Array.isArray(post.dislikes) && post.dislikes.some(id => id.toString() === currentUserId?.toString());
 
     return (
         <motion.div

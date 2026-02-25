@@ -23,7 +23,8 @@ router.get('/', auth, async (req, res) => {
             leaderboard,
             stats,
             suggestionsRaw,
-            allPosts
+            allPosts,
+            topHashtags
         ] = await Promise.all([
             // 1. Full User Data (Notifications/Friends)
             User.findById(userId).populate('friends', 'name picture').populate('notifications.from', 'name picture').lean(),
@@ -74,7 +75,15 @@ router.get('/', auth, async (req, res) => {
                 .lean(),
 
             // 8. Gallery Feed (Full)
-            Post.find().sort({ createdAt: -1 }).limit(20).lean()
+            Post.find().sort({ createdAt: -1 }).limit(20).lean(),
+
+            // 9. Top Hashtags
+            Post.aggregate([
+                { $unwind: '$hashtags' },
+                { $group: { _id: '$hashtags', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 10 }
+            ])
         ]);
 
         // Process Suggestions (Fast-track)
@@ -121,7 +130,7 @@ router.get('/', auth, async (req, res) => {
                 publicRooms
             },
             gallery: {
-                trending: { trendingPost, topHashtags: [] },
+                trending: { trendingPost, topHashtags },
                 leaderboard,
                 posts: allPosts
             }
