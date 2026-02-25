@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 const ScreenShareManager = ({ socket, roomId, user, participants, isSharing, setIsSharing }) => {
-    const [sharerId, setSharerId] = useState(null);
+    const [remoteStream, setRemoteStream] = useState(null);
     const peersRef = useRef({});
     const localStreamRef = useRef(null);
-    const videoRef = useRef(null); // Local preview
+    const remoteVideoRef = useRef(null);
 
     useEffect(() => {
         if (!socket) return;
@@ -12,6 +12,7 @@ const ScreenShareManager = ({ socket, roomId, user, participants, isSharing, set
         socket.on('screen-share-started', (id) => setSharerId(id));
         socket.on('screen-share-stopped', () => {
             setSharerId(null);
+            setRemoteStream(null);
             if (isSharing) stopSharing();
         });
 
@@ -33,14 +34,35 @@ const ScreenShareManager = ({ socket, roomId, user, participants, isSharing, set
             if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate));
         });
 
+        socket.on('user-disconnected', (socketId) => {
+            if (peersRef.current[socketId]) {
+                peersRef.current[socketId].close();
+                delete peersRef.current[socketId];
+            }
+            if (sharerId === socketId) {
+                setSharerId(null);
+                setRemoteStream(null);
+            }
+        });
+
         return () => {
             socket.off('screen-share-started');
             socket.off('screen-share-stopped');
             socket.off('webrtc-screen-offer');
             socket.off('webrtc-screen-answer');
             socket.off('webrtc-screen-ice');
+            socket.off('user-disconnected');
+            Object.values(peersRef.current).forEach(pc => pc.close());
+            localStreamRef.current?.getTracks().forEach(track => track.stop());
         };
-    }, [socket, isSharing]);
+    }, [socket, isSharing, sharerId]);
+
+    useEffect(() => {
+        if (remoteVideoRef.current && remoteStream) {
+            remoteVideoRef.current.srcObject = remoteStream;
+            remoteVideoRef.current.play().catch(e => console.error("Remote video play failed", e));
+        }
+    }, [remoteStream]);
 
     const createPeerConnection = (targetSocketId) => {
         const pc = new RTCPeerConnection({
@@ -51,13 +73,11 @@ const ScreenShareManager = ({ socket, roomId, user, participants, isSharing, set
             if (event.candidate) socket.emit('webrtc-screen-ice', { to: targetSocketId, candidate: event.candidate });
         };
         pc.ontrack = (event) => {
-            const remoteVideo = document.getElementById('remote-screen-video');
-            if (remoteVideo) {
-                remoteVideo.srcObject = event.streams[0];
-                remoteVideo.play();
-            }
+            setRemoteStream(event.streams[0]);
         };
-        if (localStreamRef.current) localStreamRef.current.getTracks().forEach(track => pc.addTrack(track, localStreamRef.current));
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => pc.addTrack(track, localStreamRef.current));
+        }
         return pc;
     };
 
@@ -112,7 +132,12 @@ const ScreenShareManager = ({ socket, roomId, user, participants, isSharing, set
                 backgroundColor: 'black', borderRadius: '16px', overflow: 'hidden', zIndex: 50,
                 boxShadow: '0 10px 40px rgba(0,0,0,0.3)', border: '2px solid #8e8ffa'
             }}>
-                <video id="remote-screen-video" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                <video
+                    ref={remoteVideoRef}
+                    style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                    autoPlay
+                    playsInline
+                />
                 <div style={{ position: 'absolute', top: '10px', left: '10px', backgroundColor: 'rgba(0,0,0,0.6)', padding: '4px 10px', borderRadius: '8px', color: 'white', fontSize: '0.7rem', fontWeight: 700 }}>
                     Screen Share Active
                 </div>

@@ -26,13 +26,16 @@ const VoiceManager = ({ socket, roomId, user, participants, isMicOn }) => {
             if (pc) await pc.addIceCandidate(new RTCIceCandidate(candidate));
         });
 
-        socket.on('update-participants', (users) => {
-            if (isMicOn) {
-                users.forEach(p => {
-                    if (p.id !== socket.id && !peersRef.current[p.id]) {
-                        initiateConnection(p.id);
-                    }
-                });
+        socket.on('user-disconnected', (socketId) => {
+            if (peersRef.current[socketId]) {
+                peersRef.current[socketId].close();
+                delete peersRef.current[socketId];
+            }
+            if (audioElementsRef.current[socketId]) {
+                audioElementsRef.current[socketId].pause();
+                audioElementsRef.current[socketId].srcObject = null;
+                audioElementsRef.current[socketId].remove();
+                delete audioElementsRef.current[socketId];
             }
         });
 
@@ -40,11 +43,11 @@ const VoiceManager = ({ socket, roomId, user, participants, isMicOn }) => {
             socket.off('webrtc-offer');
             socket.off('webrtc-answer');
             socket.off('webrtc-ice-candidate');
-            // Cleanup and close all peers if component unmounts
+            socket.off('user-disconnected');
             Object.values(peersRef.current).forEach(pc => pc.close());
             localStreamRef.current?.getTracks().forEach(track => track.stop());
         };
-    }, [socket, isMicOn]);
+    }, [socket]);
 
     useEffect(() => {
         const handleMicToggle = async () => {
@@ -66,7 +69,7 @@ const VoiceManager = ({ socket, roomId, user, participants, isMicOn }) => {
             }
         };
         handleMicToggle();
-    }, [isMicOn]);
+    }, [isMicOn, socket?.id]);
 
     const createPeerConnection = (targetSocketId) => {
         const pc = new RTCPeerConnection({
@@ -80,11 +83,17 @@ const VoiceManager = ({ socket, roomId, user, participants, isMicOn }) => {
             if (!audioElementsRef.current[targetSocketId]) {
                 const audio = new Audio();
                 audio.srcObject = event.streams[0];
-                audio.play().catch(e => console.error("Audio play failed", e));
+                audio.autoplay = true;
+                audio.play().catch(e => console.error("Audio play failed (waiting for user interaction)", e));
                 audioElementsRef.current[targetSocketId] = audio;
+                // Append to body to ensure it stays in DOM for background playback if needed
+                document.body.appendChild(audio);
+                audio.style.display = 'none'; // Keep it invisible
             }
         };
-        if (localStreamRef.current) localStreamRef.current.getTracks().forEach(track => pc.addTrack(track, localStreamRef.current));
+        if (localStreamRef.current) {
+            localStreamRef.current.getTracks().forEach(track => pc.addTrack(track, localStreamRef.current));
+        }
         return pc;
     };
 

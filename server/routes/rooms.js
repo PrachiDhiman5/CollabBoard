@@ -72,14 +72,11 @@ router.get('/:roomId', auth, async (req, res) => {
             return res.status(404).json({ message: 'Room not found' });
         }
 
-        // Strict Authorization for Private Rooms
+        // Room ID existence checked above. If they have the ID, they can enter.
+        // We still track isHost and isParticipant for UI purposes.
         const userId = req.user.id;
         const isHost = room.host?._id?.toString() === userId || room.host?.toString() === userId;
         const isParticipant = room.participants.some(p => p._id.toString() === userId || p.toString() === userId);
-
-        if (!room.isPublic && !isHost && !isParticipant) {
-            return res.status(403).json({ message: 'Access denied. This is a private room.' });
-        }
 
         // Add user to participants if not already there (only if room is public or they are already authorized)
         if (!isParticipant) {
