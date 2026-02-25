@@ -8,6 +8,7 @@ const router = express.Router();
 // For now, mirroring a common pattern where frontend sends the Google token
 router.post('/google', async (req, res) => {
     const { googleId, name, email, picture } = req.body;
+    console.log(`DEBUG: Auth request received for email: ${email}, name: ${name}`);
 
     try {
         let user = await User.findOne({ googleId });

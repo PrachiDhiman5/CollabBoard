@@ -45,8 +45,16 @@ const Landing = () => {
                 console.log("Login successful, navigating to dashboard...");
                 navigate('/dashboard');
             } catch (err) {
-                console.error("Login process failed at:", err);
-                alert("Google Sign-In failed. Please check your network or try another account.");
+                console.error("DEBUG: Login process failed. Full error:", err);
+                if (err.response) {
+                    console.error("DEBUG: Backend error response:", err.response.data);
+                    console.error("DEBUG: Backend error status:", err.response.status);
+                } else if (err.request) {
+                    console.error("DEBUG: No response received. Possible CORS or network issue. Request details:", err.request);
+                } else {
+                    console.error("DEBUG: Error setting up request:", err.message);
+                }
+                alert(`Google Sign-In failed: ${err.message}. Please check console for details.`);
             } finally {
                 setLoginLoading(false);
             }
