@@ -56,7 +56,7 @@ router.post('/:id/like', auth, async (req, res) => {
         const post = await Post.findById(req.params.id);
         if (!post) return res.status(404).json({ message: 'Post not found' });
 
-        if (post.likes.includes(req.user.id)) {
+        if (post.likes.some(id => id.toString() === req.user.id)) {
             post.likes = post.likes.filter(id => id.toString() !== req.user.id);
         } else {
             post.likes.push(req.user.id);
@@ -91,12 +91,12 @@ router.post('/:id/dislike', auth, async (req, res) => { // Changed protect to au
         const post = await Post.findById(req.params.id);
         if (!post) return res.status(404).json({ message: 'Post not found' });
 
-        const disliked = post.dislikes.includes(req.user.id);
+        const disliked = post.dislikes.some(id => id.toString() === req.user.id);
         if (disliked) {
-            post.dislikes = post.dislikes.filter(id => id.toString() !== req.user.id.toString());
+            post.dislikes = post.dislikes.filter(id => id.toString() !== req.user.id);
         } else {
             post.dislikes.push(req.user.id);
-            post.likes = post.likes.filter(id => id.toString() !== req.user.id.toString());
+            post.likes = post.likes.filter(id => id.toString() !== req.user.id);
         }
         await post.save();
         res.json(post);

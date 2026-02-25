@@ -1,29 +1,59 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Heart, MessageCircle, Share2, ThumbsDown, TrendingUp, Hash, ArrowLeft, Trophy, Crown, Star } from 'lucide-react';
-import { postAPI } from '../services/api';
-import { useData } from '../context/DataContext';
-import { useNavigate } from 'react-router-dom';
-import confetti from 'canvas-confetti';
-
 const Gallery = () => {
-    const { posts, trending, leaderboard, fetchPosts, refreshPosts, loading } = useData();
+    const { posts: globalPosts, trending, leaderboard, fetchPosts, refreshPosts, loading: globalLoading } = useData();
+    const [posts, setPosts] = useState([]);
     const navigate = useNavigate();
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
+    // Sync local state with global context
+    useEffect(() => {
+        if (globalPosts) setPosts(globalPosts);
+    }, [globalPosts]);
+
     useEffect(() => {
         fetchPosts();
-        const interval = setInterval(() => fetchPosts(true), 60000); // Poll every 60s (background refresh)
+        const interval = setInterval(() => fetchPosts(true, true), 60000);
         return () => clearInterval(interval);
     }, [fetchPosts]);
 
     const handleAction = async (id, action) => {
+        const userId = (user._id || user.id);
+        if (!userId) return;
+
+        // OPTIMISTIC UPDATE: Update local state immediately
+        setPosts(prev => prev.map(post => {
+            if (post._id !== id) return post;
+
+            let newLikes = [...(post.likes || [])];
+            let newDislikes = [...(post.dislikes || [])];
+
+            if (action === 'like') {
+                const liked = newLikes.some(uid => uid.toString() === userId.toString());
+                if (liked) {
+                    newLikes = newLikes.filter(uid => uid.toString() !== userId.toString());
+                } else {
+                    newLikes.push(userId);
+                    newDislikes = newDislikes.filter(uid => uid.toString() !== userId.toString());
+                }
+            } else if (action === 'dislike') {
+                const disliked = newDislikes.some(uid => uid.toString() === userId.toString());
+                if (disliked) {
+                    newDislikes = newDislikes.filter(uid => uid.toString() !== userId.toString());
+                } else {
+                    newDislikes.push(userId);
+                    newLikes = newLikes.filter(uid => uid.toString() !== userId.toString());
+                }
+            }
+            return { ...post, likes: newLikes, dislikes: newDislikes };
+        }));
+
         try {
             if (action === 'like') await postAPI.likePost(id);
             else if (action === 'dislike') await postAPI.dislikePost(id);
+            // Refresh in background to sync with server truth
             refreshPosts(true);
         } catch (err) {
             console.error("Action error", err);
+            refreshPosts(true); // Rollback on error
         }
     };
 
@@ -94,7 +124,7 @@ const Gallery = () => {
                         </div>
 
                         {Array.isArray(posts) && posts.map(post => (
-                            <PostCard key={post._id} post={post} onAction={handleAction} currentUser={user} onRefresh={refreshPosts} />
+                            <PostCard key={post._id} post={post} onAction={handleAction} currentUser={user} onRefresh={refreshPosts} setLocalPosts={setPosts} />
                         ))}
                     </div>
 
@@ -229,7 +259,7 @@ const CreatePostCard = ({ onRefresh, user }) => {
     );
 };
 
-const PostCard = ({ post, onAction, currentUser, onRefresh }) => {
+const PostCard = ({ post, onAction, currentUser, onRefresh, setLocalPosts }) => {
     const [comment, setComment] = useState('');
     const [showComments, setShowComments] = useState(false);
 
@@ -293,9 +323,22 @@ const PostCard = ({ post, onAction, currentUser, onRefresh }) => {
                                 <button
                                     onClick={async () => {
                                         if (!comment.trim()) return;
-                                        await postAPI.addComment(post._id, comment);
-                                        setComment('');
-                                        onRefresh();
+
+                                        // OPTIMISTIC COMMENT
+                                        const newComment = { userName: currentUser.name, text: comment };
+                                        setLocalPosts(prev => prev.map(p => {
+                                            if (p._id !== post._id) return p;
+                                            return { ...p, comments: [...p.comments, newComment] };
+                                        }));
+
+                                        try {
+                                            await postAPI.addComment(post._id, comment);
+                                            setComment('');
+                                            onRefresh(true);
+                                        } catch (err) {
+                                            console.error(err);
+                                            onRefresh(true);
+                                        }
                                     }}
                                     style={{ padding: '0 16px', backgroundColor: '#8e8ffa', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 750, cursor: 'pointer' }}
                                 >

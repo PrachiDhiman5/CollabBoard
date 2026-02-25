@@ -129,11 +129,11 @@ export const DataProvider = ({ children }) => {
     const value = useMemo(() => ({
         history, publicRooms, posts, trending, leaderboard, profileData,
         suggestedFriends, notifications, friends, loading,
-        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, boot
+        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, boot
     }), [
         history, publicRooms, posts, trending, leaderboard, profileData,
         suggestedFriends, notifications, friends, loading,
-        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, boot
+        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, boot
     ]);
 
     return (
