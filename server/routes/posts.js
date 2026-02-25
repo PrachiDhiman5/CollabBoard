@@ -141,29 +141,46 @@ router.post('/:id/comment', auth, async (req, res) => {
     }
 });
 
-// Strictly fetch the post with the most likes globally
-const trendingPosts = await Post.aggregate([
-    { $addFields: { likesCount: { $size: "$likes" } } },
-    { $sort: { likesCount: -1 } },
-    { $limit: 1 },
-    { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1 } }
-]);
+// Trending Data (Most likes in 4h + top hashtags)
+router.get('/trending', async (req, res) => {
+    try {
+        const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
 
-const trendingPost = trendingPosts.length > 0 ? trendingPosts[0] : null;
+        // Post with most likes using aggregation
+        const trendingPosts = await Post.aggregate([
+            { $match: { createdAt: { $gte: fourHoursAgo } } },
+            { $addFields: { likesCount: { $size: "$likes" } } },
+            { $sort: { likesCount: -1 } },
+            { $limit: 1 },
+            { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1 } }
+        ]);
 
-// Top Hashtags (Aggregation)
-const topHashtags = await Post.aggregate([
-    { $unwind: '$hashtags' },
-    { $group: { _id: '$hashtags', count: { $sum: 1 } } },
-    { $sort: { count: -1 } },
-    { $limit: 10 }
-]);
+        let trendingPost = trendingPosts.length > 0 ? trendingPosts[0] : null;
 
-res.json({ trendingPost, topHashtags });
+        // Fallback to all-time top if no recent posts
+        if (!trendingPost) {
+            const allTimeTop = await Post.aggregate([
+                { $addFields: { likesCount: { $size: "$likes" } } },
+                { $sort: { likesCount: -1 } },
+                { $limit: 1 },
+                { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1 } }
+            ]);
+            trendingPost = allTimeTop.length > 0 ? allTimeTop[0] : null;
+        }
+
+        // Top Hashtags (Aggregation)
+        const topHashtags = await Post.aggregate([
+            { $unwind: '$hashtags' },
+            { $group: { _id: '$hashtags', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 10 }
+        ]);
+
+        res.json({ trendingPost, topHashtags });
     } catch (err) {
-    console.error("Trending Error:", err);
-    res.status(500).json({ message: err.message });
-}
+        console.error("Trending Error:", err);
+        res.status(500).json({ message: err.message });
+    }
 });
 
 // Leaderboard Data (Top 10 users by total likes)
