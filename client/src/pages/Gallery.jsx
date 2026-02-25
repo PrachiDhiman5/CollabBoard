@@ -95,7 +95,14 @@ const Gallery = () => {
             <div style={{ maxWidth: '1600px', margin: '0 auto', padding: '2rem 4rem' }}>
 
                 {/* Hero Spotlight */}
-                {trending?.trendingPost && (
+                {globalLoading.boot && !trending?.trendingPost ? (
+                    <div style={{ height: '450px', borderRadius: '40px', backgroundColor: '#f1f2f6', marginBottom: '4rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <Star size={40} color="#8e8ffa" className="animate-pulse" />
+                            <p style={{ color: '#b2bec3', fontWeight: 700, marginTop: '10px' }}>Loading Spotlight...</p>
+                        </div>
+                    </div>
+                ) : trending?.trendingPost && (
                     <motion.div
                         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                         style={{ position: 'relative', height: '450px', borderRadius: '40px', overflow: 'hidden', marginBottom: '4rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}

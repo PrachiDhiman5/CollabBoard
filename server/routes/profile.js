@@ -53,7 +53,7 @@ router.get('/suggested-friends', auth, async (req, res) => {
 
         const recentRooms = await Room.find({
             $or: [{ host: id }, { participants: id }]
-        }).sort({ updatedAt: -1 }).limit(3).populate('participants', 'name picture'); // Reduced limit for speed
+        }).sort({ updatedAt: -1 }).limit(1).populate('participants', 'name picture');
 
         if (!recentRooms || recentRooms.length === 0) return res.json([]);
 

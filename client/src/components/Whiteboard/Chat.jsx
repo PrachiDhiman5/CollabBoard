@@ -72,8 +72,8 @@ const Chat = ({ socket, roomId, user, participants, hostId }) => {
             zIndex: 500,
             // Move transition to outer container for smoother canvas resizing
             width: isOpen ? '400px' : '0px',
-            transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            overflow: 'visible' // Ensure arrow is visible when closed
+            transition: 'width 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
+            overflow: 'visible'
         }}>
             {!isOpen && (
                 <button
@@ -81,13 +81,13 @@ const Chat = ({ socket, roomId, user, participants, hostId }) => {
                     title="Open Chat"
                     style={{
                         position: 'absolute',
-                        right: '10px', // Adjusted to be near edge
+                        right: '10px',
                         width: '40px', height: '40px',
                         backgroundColor: 'white', border: '1px solid #edeff2',
                         borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 101,
                         color: '#636e72',
-                        transition: 'all 0.3s'
+                        transition: 'all 0.2s'
                     }}
                     onMouseOver={(e) => {
                         e.currentTarget.style.color = '#8e8ffa';
@@ -116,11 +116,10 @@ const Chat = ({ socket, roomId, user, participants, hostId }) => {
                 zIndex: 100,
                 flexShrink: 0,
                 overflow: 'hidden',
-                // Handle inner content visibility during close
+                // Snappy visibility
                 opacity: isOpen ? 1 : 0,
-                transform: `translateX(${isOpen ? '0' : '20px'})`,
                 pointerEvents: isOpen ? 'all' : 'none',
-                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                transition: 'opacity 0.2s ease-out'
             }}>
                 <AnimatePresence>
                     {isOpen && (
