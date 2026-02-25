@@ -2,21 +2,22 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-import { OAuth2Client } from 'google-auth-library';
+import axios from 'axios';
 
 const router = express.Router();
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// Optimized Google Login - Verifies ID Token directly from Google on the server
+// Optimized Google Login - Verifies Access Token directly from Google on the server
 router.post('/google', async (req, res) => {
-    const { idToken } = req.body; // Client now sends idToken instead of raw user data
+    const { idToken } = req.body; // Actually contains the access_token from implicit flow
 
     try {
-        const ticket = await client.verifyIdToken({
-            idToken,
-            audience: process.env.GOOGLE_CLIENT_ID,
+        console.log("DEBUG: Verifying Google Token on backend...");
+        // Fetch user info from Google using the access token
+        const googleRes = await axios.get('https://www.googleapis.com/oauth2/v3/userinfo', {
+            headers: { Authorization: `Bearer ${idToken}` }
         });
-        const { sub: googleId, name, email, picture } = ticket.getPayload();
+
+        const { sub: googleId, name, email, picture } = googleRes.data;
 
         console.log(`DEBUG: Fast Auth verified for: ${email}`);
 
