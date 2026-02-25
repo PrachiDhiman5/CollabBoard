@@ -11,31 +11,30 @@ const router = express.Router();
 router.get('/stats', auth, async (req, res) => {
     try {
         const userId = req.user.id;
-        console.log('Fetching stats for userId:', userId);
-
         const id = new mongoose.Types.ObjectId(userId);
 
-        // Room counts - More inclusive
-        const rooms = await Room.find({
-            $or: [{ host: id }, { participants: id }]
-        });
-        console.log('Rooms found for stats:', rooms.length);
-        const totalRooms = rooms.length;
-        const privateRooms = rooms.filter(r => !r.isPublic).map(r => ({ id: r.roomId, name: r.name }));
-        const publicRoomsCount = rooms.filter(r => r.isPublic).length;
+        // Optimized counts using countDocuments
+        const [totalRooms, publicRoomsCount, privateRooms] = await Promise.all([
+            Room.countDocuments({ $or: [{ host: id }, { participants: id }] }),
+            Room.countDocuments({ $or: [{ host: id }, { participants: id }], isPublic: true }),
+            Room.find({ $or: [{ host: id }, { participants: id }], isPublic: false })
+                .select('roomId name')
+                .lean()
+        ]);
 
-        // Trending Status (#1) using Aggregation
+        // Trending Status (#1)
         const trendingPosts = await Post.aggregate([
             { $addFields: { likesCount: { $size: "$likes" } } },
             { $sort: { likesCount: -1 } },
-            { $limit: 1 }
+            { $limit: 1 },
+            { $project: { userId: 1 } }
         ]);
 
         const isTrending = trendingPosts.length > 0 && trendingPosts[0].userId.toString() === userId;
 
         res.json({
             totalRooms,
-            privateRooms,
+            privateRooms: privateRooms.map(r => ({ id: r.roomId, name: r.name })),
             publicRoomsCount,
             isTrending,
             trendingPostId: isTrending ? trendingPosts[0]._id : null
@@ -54,41 +53,41 @@ router.get('/suggested-friends', auth, async (req, res) => {
 
         const recentRooms = await Room.find({
             $or: [{ host: id }, { participants: id }]
-        }).sort({ createdAt: -1 }).limit(5).populate('participants', 'name picture');
+        }).sort({ updatedAt: -1 }).limit(3).populate('participants', 'name picture'); // Reduced limit for speed
 
         if (!recentRooms || recentRooms.length === 0) return res.json([]);
 
-        // Filter out self and existing friends from all recent rooms
-        const user = await User.findById(id);
-        const friendIds = user.friends.map(f => f.toString());
+        const user = await User.findById(id).select('friends');
+        const friendIds = new Set(user.friends.map(f => f.toString()));
 
-        let allPotential = [];
+        const potentialMap = new Map();
         recentRooms.forEach(room => {
-            allPotential = [...allPotential, ...room.participants];
+            room.participants.forEach(p => {
+                const pId = p._id.toString();
+                if (pId !== userId && !friendIds.has(pId)) {
+                    potentialMap.set(pId, p);
+                }
+            });
         });
 
-        // Unique and filtered, with status check
-        const uniqueWithStatus = [];
-        const seenIds = new Set();
-        seenIds.add(userId);
+        const targetIds = Array.from(potentialMap.keys()).slice(0, 10);
+        if (targetIds.length === 0) return res.json([]);
 
-        for (const p of allPotential) {
-            const pId = p._id.toString();
-            if (!seenIds.has(pId) && !friendIds.includes(pId)) {
-                // Check if we sent them a request
-                const receiver = await User.findById(p._id);
-                const isPending = receiver?.friendRequests.some(r => r.from.toString() === userId);
+        // Batch fetch users to check pending status (Fixes N+1)
+        const targetUsers = await User.find({ _id: { $in: targetIds } }).select('friendRequests');
 
-                uniqueWithStatus.push({
-                    ...p.toObject(),
-                    requestStatus: isPending ? 'pending' : 'none'
-                });
-                seenIds.add(pId);
-            }
-        }
+        const suggestions = targetIds.map(tId => {
+            const p = potentialMap.get(tId);
+            const tUser = targetUsers.find(u => u._id.toString() === tId);
+            const isPending = tUser?.friendRequests.some(r => r.from.toString() === userId);
 
-        console.log('Total suggestions pooled:', uniqueWithStatus.length);
-        res.json(uniqueWithStatus.slice(0, 5));
+            return {
+                ...p.toObject(),
+                requestStatus: isPending ? 'pending' : 'none'
+            };
+        });
+
+        res.json(suggestions.slice(0, 5));
     } catch (err) {
         console.error("Suggestions Error:", err);
         res.status(500).send('Server Error');

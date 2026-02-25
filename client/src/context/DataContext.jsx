@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useRef } from 'react';
 import { roomAPI, postAPI, profileAPI } from '../services/api';
 
 const DataContext = createContext();
@@ -26,10 +26,15 @@ export const DataProvider = ({ children }) => {
         friends: []
     });
 
+    // Refs for stable identity checks (prevents redundant fetches without needing the state in deps)
+    const historyRef = useRef(null);
+    const postsRef = useRef(null);
+    const profileRef = useRef(null);
+
     const [loading, setLoading] = useState({});
 
     const fetchRooms = useCallback(async (force = false) => {
-        if (!force && history && publicRooms) return;
+        if (!force && historyRef.current) return;
 
         setLoading(prev => ({ ...prev, rooms: true }));
         try {
@@ -37,17 +42,20 @@ export const DataProvider = ({ children }) => {
                 roomAPI.getRoomHistory(),
                 roomAPI.getPublicRooms()
             ]);
-            setHistory(Array.isArray(historyRes.data) ? historyRes.data : []);
-            setPublicRooms(Array.isArray(publicRes.data) ? publicRes.data : []);
+            const hData = Array.isArray(historyRes.data) ? historyRes.data : [];
+            const rData = Array.isArray(publicRes.data) ? publicRes.data : [];
+            setHistory(hData);
+            setPublicRooms(rData);
+            historyRef.current = hData;
         } catch (err) {
             console.error("Failed to fetch dashboard data", err);
         } finally {
             setLoading(prev => ({ ...prev, rooms: false }));
         }
-    }, [history, publicRooms]);
+    }, []);
 
     const fetchPosts = useCallback(async (force = false) => {
-        if (!force && posts && trending && leaderboard) return;
+        if (!force && postsRef.current) return;
 
         setLoading(prev => ({ ...prev, posts: true }));
         try {
@@ -56,18 +64,20 @@ export const DataProvider = ({ children }) => {
                 postAPI.getTrending(),
                 postAPI.getLeaderboard()
             ]);
-            setPosts(postsRes.data?.posts && Array.isArray(postsRes.data.posts) ? postsRes.data.posts : []);
+            const pData = postsRes.data?.posts && Array.isArray(postsRes.data.posts) ? postsRes.data.posts : [];
+            setPosts(pData);
             setTrending(trendingRes.data || { trendingPost: null, topHashtags: [] });
             setLeaderboard(Array.isArray(leaderRes.data) ? leaderRes.data : []);
+            postsRef.current = pData;
         } catch (err) {
             console.error("Gallery fetch error", err);
         } finally {
             setLoading(prev => ({ ...prev, posts: false }));
         }
-    }, [posts, trending, leaderboard]);
+    }, []);
 
     const fetchProfileData = useCallback(async (force = false) => {
-        if (!force && profileData.stats) return;
+        if (!force && profileRef.current) return;
 
         setLoading(prev => ({ ...prev, profile: true }));
         try {
@@ -77,20 +87,22 @@ export const DataProvider = ({ children }) => {
                 profileAPI.getNotifications(),
                 profileAPI.getFriends()
             ]);
-            setProfileData({
+            const pData = {
                 stats: statsRes.data,
                 suggestions: suggestRes.data || [],
                 notifications: notifyRes.data || [],
                 friends: friendsRes.data || []
-            });
+            };
+            setProfileData(pData);
+            profileRef.current = pData.stats;
         } catch (err) {
             console.error("Profile Fetch Error", err);
         } finally {
             setLoading(prev => ({ ...prev, profile: false }));
         }
-    }, [profileData]);
+    }, []);
 
-    const value = {
+    const value = useMemo(() => ({
         history,
         publicRooms,
         posts,
@@ -104,7 +116,7 @@ export const DataProvider = ({ children }) => {
         refreshRooms: () => fetchRooms(true),
         refreshPosts: () => fetchPosts(true),
         refreshProfile: () => fetchProfileData(true)
-    };
+    }), [history, publicRooms, posts, trending, leaderboard, profileData, loading, fetchRooms, fetchPosts, fetchProfileData]);
 
     return (
         <DataContext.Provider value={value}>
