@@ -21,7 +21,8 @@ router.get('/', auth, async (req, res) => {
             publicRooms,
             trending,
             leaderboard,
-            stats
+            stats,
+            suggestionsRaw
         ] = await Promise.all([
             // 1. Full User Data (Notifications/Friends)
             User.findById(userId).populate('friends', 'name picture').populate('notifications.from', 'name picture').lean(),
@@ -74,11 +75,11 @@ router.get('/', auth, async (req, res) => {
 
         // Process Suggestions (Fast-track)
         let suggestions = [];
-        if (stats[2] && stats[2].length > 0) {
+        if (suggestionsRaw && suggestionsRaw.length > 0) {
             const friendIds = new Set(user.friends.map(f => (f._id || f).toString()));
             const potentialMap = new Map();
 
-            stats[2].forEach(room => {
+            suggestionsRaw.forEach(room => {
                 room.participants.forEach(p => {
                     const pId = p._id.toString();
                     if (pId !== userId && !friendIds.has(pId)) {
