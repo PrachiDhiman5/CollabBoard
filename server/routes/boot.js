@@ -42,7 +42,6 @@ router.get('/', auth, async (req, res) => {
                 .select('-objects')
                 .populate('host', 'name picture')
                 .sort({ updatedAt: -1 })
-                .limit(10)
                 .lean(),
 
             // 4. Trending Data (4h window with fallback)
