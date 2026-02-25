@@ -48,6 +48,7 @@ export const DataProvider = ({ children }) => {
             setProfileData(data.profile);
             setTrending(data.gallery.trending);
             setLeaderboard(data.gallery.leaderboard);
+            setPosts(data.gallery.posts || []);
             setNotifications(data.profile.notifications);
             setFriends(data.profile.friends);
             setSuggestedFriends(data.profile.suggestions);
