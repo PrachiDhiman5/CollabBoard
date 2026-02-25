@@ -27,14 +27,25 @@ if (!MONGODB_URI) {
 
 const app = express();
 const server = http.createServer(app);
+
+const allowedOrigins = [
+    process.env.CLIENT_URL,
+    "http://localhost:5174",
+    "http://localhost:5173"
+].filter(Boolean);
+
 const io = new Server(server, {
     cors: {
-        origin: process.env.CLIENT_URL || "http://localhost:5174",
-        methods: ["GET", "POST"]
+        origin: allowedOrigins,
+        methods: ["GET", "POST"],
+        credentials: true
     }
 });
 
-app.use(cors());
+app.use(cors({
+    origin: allowedOrigins,
+    credentials: true
+}));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 

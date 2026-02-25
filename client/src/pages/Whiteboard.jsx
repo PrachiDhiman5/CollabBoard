@@ -51,7 +51,12 @@ const Whiteboard = () => {
         };
         fetchRoom();
 
-        socketRef.current = io('http://localhost:5000');
+        // Use Socket URL from env or derive from API URL (removing /api)
+        const socketURL = import.meta.env.VITE_SOCKET_URL ||
+            import.meta.env.VITE_API_URL?.replace('/api', '') ||
+            'http://localhost:5000';
+
+        socketRef.current = io(socketURL);
         socketRef.current.emit('join-room', { roomId, user });
 
         socketRef.current.on('elements-sync', (syncedElements) => setElements(syncedElements));
