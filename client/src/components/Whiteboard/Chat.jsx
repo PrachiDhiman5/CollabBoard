@@ -69,51 +69,58 @@ const Chat = ({ socket, roomId, user, participants, hostId }) => {
             height: '100%',
             display: 'flex',
             alignItems: 'center',
-            zIndex: 500
+            zIndex: 500,
+            // Move transition to outer container for smoother canvas resizing
+            width: isOpen ? '400px' : '0px',
+            transition: 'width 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+            overflow: 'visible' // Ensure arrow is visible when closed
         }}>
             {!isOpen && (
                 <button
                     onClick={() => setIsOpen(true)}
                     title="Open Chat"
                     style={{
-                        position: 'absolute', right: '30px', width: '48px', height: '48px',
+                        position: 'absolute',
+                        right: '10px', // Adjusted to be near edge
+                        width: '40px', height: '40px',
                         backgroundColor: 'white', border: '1px solid #edeff2',
-                        borderRadius: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                         boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 101,
-                        color: '#b2bec3',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                        color: '#636e72',
+                        transition: 'all 0.3s'
                     }}
                     onMouseOver={(e) => {
                         e.currentTarget.style.color = '#8e8ffa';
                         e.currentTarget.style.transform = 'scale(1.1)';
-                        e.currentTarget.style.boxShadow = '0 12px 40px rgba(142,143,250,0.15)';
                     }}
                     onMouseOut={(e) => {
-                        e.currentTarget.style.color = '#b2bec3';
+                        e.currentTarget.style.color = '#636e72';
                         e.currentTarget.style.transform = 'scale(1)';
-                        e.currentTarget.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
                     }}
                 >
-                    <ChevronLeft size={24} />
+                    <ChevronLeft size={20} />
                 </button>
             )}
 
             <div style={{
-                width: isOpen ? '360px' : '0px',
-                height: isOpen ? 'calc(100% - 40px)' : '0px',
-                marginRight: isOpen ? '20px' : '0',
-                marginLeft: isOpen ? '20px' : '0',
-                border: isOpen ? '1px solid #edeff2' : 'none',
+                width: '360px',
+                height: 'calc(100% - 40px)',
+                margin: '0 20px',
+                border: '1px solid #edeff2',
                 borderRadius: '24px',
-                boxShadow: isOpen ? '0 10px 40px rgba(0,0,0,0.08)' : 'none',
+                boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
                 backgroundColor: 'white',
-                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
                 zIndex: 100,
                 flexShrink: 0,
-                overflow: 'hidden'
+                overflow: 'hidden',
+                // Handle inner content visibility during close
+                opacity: isOpen ? 1 : 0,
+                transform: `translateX(${isOpen ? '0' : '20px'})`,
+                pointerEvents: isOpen ? 'all' : 'none',
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
             }}>
                 <AnimatePresence>
                     {isOpen && (

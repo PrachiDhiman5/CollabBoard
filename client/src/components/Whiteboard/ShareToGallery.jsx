@@ -43,8 +43,9 @@ const ShareToGallery = ({ isOpen, onClose, canvasRef, user }) => {
 
         setLoading(true);
         try {
-            // FIX: Access the real canvas DOM element via the forwardRef method
-            const realCanvas = canvasRef.current.getCanvas();
+            // FIX: canvasRef.current ALREADY contains the real canvas DOM element 
+            // because of how it's passed from Whiteboard.jsx
+            const realCanvas = canvasRef.current;
             if (!realCanvas) throw new Error("Canvas not found");
 
             const rawImage = realCanvas.toDataURL('image/png');
