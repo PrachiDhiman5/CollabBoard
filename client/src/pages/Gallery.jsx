@@ -61,7 +61,7 @@ const Gallery = () => {
                         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                         style={{ position: 'relative', height: '450px', borderRadius: '40px', overflow: 'hidden', marginBottom: '4rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}
                     >
-                        <img src={trending.trendingPost.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={trending.trendingPost.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)' }}></div>
 
                         <div style={{ position: 'absolute', bottom: '40px', left: '40px', right: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -249,7 +249,7 @@ const PostCard = ({ post, onAction, currentUser, onRefresh }) => {
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#8e8ffa', opacity: 0.3 }}></div>
             </div>
 
-            <img src={post.image} style={{ width: '100%', height: '320px', objectFit: 'cover' }} />
+            <img src={post.image} style={{ width: '100%', height: '320px', objectFit: 'cover' }} loading="lazy" />
 
             <div style={{ padding: '1.5rem' }}>
                 <p style={{ margin: '0 0 12px 0', fontWeight: 600, color: '#2d3436', lineHeight: 1.4 }}>{post.caption}</p>

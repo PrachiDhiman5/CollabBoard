@@ -8,16 +8,40 @@ const ShareToGallery = ({ isOpen, onClose, canvasRef, user }) => {
     const [hashtags, setHashtags] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const resizeImage = (dataUrl, maxWidth = 1200) => {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > maxWidth) {
+                    height = (maxWidth / width) * height;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                resolve(canvas.toDataURL('image/jpeg', 0.7)); // Compressed JPEG
+            };
+            img.src = dataUrl;
+        });
+    };
+
     const handleShare = async () => {
         if (!caption.trim()) return alert("Please add a caption!");
 
         setLoading(true);
         try {
-            const image = canvasRef.current.toDataURL('image/png');
+            const rawImage = canvasRef.current.toDataURL('image/png');
+            const compressedImage = await resizeImage(rawImage);
             const hashtagsArray = hashtags.split(' ').filter(h => h.startsWith('#')).map(h => h.slice(1));
 
             await postAPI.createPost({
-                image,
+                image: compressedImage,
                 caption,
                 hashtags: hashtagsArray
             });

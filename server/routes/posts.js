@@ -151,7 +151,8 @@ router.get('/trending', async (req, res) => {
             { $match: { createdAt: { $gte: fourHoursAgo } } },
             { $addFields: { likesCount: { $size: "$likes" } } },
             { $sort: { likesCount: -1 } },
-            { $limit: 1 }
+            { $limit: 1 },
+            { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1 } }
         ]);
 
         let trendingPost = trendingPosts.length > 0 ? trendingPosts[0] : null;
@@ -161,7 +162,8 @@ router.get('/trending', async (req, res) => {
             const allTimeTop = await Post.aggregate([
                 { $addFields: { likesCount: { $size: "$likes" } } },
                 { $sort: { likesCount: -1 } },
-                { $limit: 1 }
+                { $limit: 1 },
+                { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1 } }
             ]);
             trendingPost = allTimeTop.length > 0 ? allTimeTop[0] : null;
         }
