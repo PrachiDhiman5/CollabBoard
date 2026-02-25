@@ -1,3 +1,11 @@
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Heart, MessageCircle, Share2, ThumbsDown, TrendingUp, Hash, ArrowLeft, Trophy, Crown, Star } from 'lucide-react';
+import { postAPI } from '../services/api';
+import { useData } from '../context/DataContext';
+import { useNavigate } from 'react-router-dom';
+import confetti from 'canvas-confetti';
+
 const Gallery = () => {
     const { posts: globalPosts, trending, leaderboard, fetchPosts, refreshPosts, loading: globalLoading } = useData();
     const [posts, setPosts] = useState([]);
@@ -23,8 +31,8 @@ const Gallery = () => {
         setPosts(prev => prev.map(post => {
             if (post._id !== id) return post;
 
-            let newLikes = [...(post.likes || [])];
-            let newDislikes = [...(post.dislikes || [])];
+            let newLikes = Array.isArray(post.likes) ? [...post.likes] : [];
+            let newDislikes = Array.isArray(post.dislikes) ? [...post.dislikes] : [];
 
             if (action === 'like') {
                 const liked = newLikes.some(uid => uid.toString() === userId.toString());
@@ -142,7 +150,7 @@ const Gallery = () => {
                                     <div key={leader._id} onClick={triggerConfetti} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '10px', borderRadius: '16px', transition: '0.2s' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                                             <div style={{ position: 'relative' }}>
-                                                <img src={leader.userPicture || `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(leader.userName || 'Artist')}`} style={{ width: 40, height: 40, borderRadius: '12px', objectFit: 'cover' }} />
+                                                <img src={leader.userPicture} style={{ width: 40, height: 40, borderRadius: '12px', objectFit: 'cover' }} onError={(e) => e.target.src = `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(leader.userName || 'Artist')}`} />
                                                 {i === 0 && <Trophy size={14} color="#f9ca24" style={{ position: 'absolute', top: -5, right: -5, background: 'white', borderRadius: '50%', padding: '2px' }} />}
                                             </div>
                                             <div>
@@ -230,19 +238,19 @@ const CreatePostCard = ({ onRefresh, user }) => {
 
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                         <input
-                            placeholder="Paste drawing image URL..."
+                            placeholder="Image URL..."
                             value={image} onChange={(e) => setImage(e.target.value)}
                             style={{ padding: '12px 20px', borderRadius: '16px', border: '1px solid #f1f2f6', outline: 'none', backgroundColor: '#fcfaff', fontSize: '0.9rem' }}
                         />
                         <input
-                            placeholder="Add hashtags (e.g. #art #cool)..."
+                            placeholder="Hashtags..."
                             value={hashtags} onChange={(e) => setHashtags(e.target.value)}
                             style={{ padding: '12px 20px', borderRadius: '16px', border: '1px solid #f1f2f6', outline: 'none', backgroundColor: '#fcfaff', fontSize: '0.9rem' }}
                         />
                     </div>
 
                     <input
-                        placeholder="Write a catchy caption..."
+                        placeholder="Caption..."
                         value={caption} onChange={(e) => setCaption(e.target.value)}
                         style={{ padding: '12px 20px', borderRadius: '16px', border: '1px solid #f1f2f6', outline: 'none', backgroundColor: '#fcfaff', fontSize: '0.9rem' }}
                     />
@@ -263,9 +271,26 @@ const PostCard = ({ post, onAction, currentUser, onRefresh, setLocalPosts }) => 
     const [comment, setComment] = useState('');
     const [showComments, setShowComments] = useState(false);
 
-    const currentUserId = (currentUser._id || currentUser.id)?.toString();
-    const hasLiked = Array.isArray(post.likes) && post.likes.some(id => id.toString() === currentUserId);
-    const hasDisliked = Array.isArray(post.dislikes) && post.dislikes.some(id => id.toString() === currentUserId);
+    const userId = (currentUser._id || currentUser.id)?.toString();
+    const hasLiked = Array.isArray(post.likes) && post.likes.some(id => id.toString() === userId);
+    const hasDisliked = Array.isArray(post.dislikes) && post.dislikes.some(id => id.toString() === userId);
+
+    const handleAddComment = async () => {
+        if (!comment.trim()) return;
+
+        // OPTIMISTIC COMMENT
+        const newComment = { userId: currentUser._id || currentUser.id, userName: currentUser.name, text: comment };
+        setLocalPosts(prev => prev.map(p => p._id === post._id ? { ...p, comments: [...p.comments, newComment] } : p));
+
+        try {
+            await postAPI.addComment(post._id, comment);
+            setComment('');
+            onRefresh(true);
+        } catch (err) {
+            console.error(err);
+            onRefresh(true);
+        }
+    };
 
     return (
         <motion.div
@@ -274,7 +299,7 @@ const PostCard = ({ post, onAction, currentUser, onRefresh, setLocalPosts }) => 
         >
             <div style={{ padding: '1.2rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <img src={post.userPicture || `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(post.userName || 'Creator')}`} style={{ width: 34, height: 34, borderRadius: '10px' }} />
+                    <img src={post.userPicture} style={{ width: 34, height: 34, borderRadius: '10px' }} onError={(e) => e.target.src = `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(post.userName || 'Creator')}`} />
                     <span style={{ fontWeight: 750, fontSize: '0.9rem', color: '#2d3436' }}>{post.userName}</span>
                 </div>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#8e8ffa', opacity: 0.3 }}></div>
@@ -285,18 +310,18 @@ const PostCard = ({ post, onAction, currentUser, onRefresh, setLocalPosts }) => 
             <div style={{ padding: '1.5rem' }}>
                 <p style={{ margin: '0 0 12px 0', fontWeight: 600, color: '#2d3436', lineHeight: 1.4 }}>{post.caption}</p>
                 <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginBottom: '1.5rem' }}>
-                    {post.hashtags.map(h => <span key={h} style={{ backgroundColor: '#f5f6ff', color: '#8e8ffa', padding: '6px 12px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800 }}>#{h}</span>)}
+                    {post.hashtags?.map(h => <span key={h} style={{ backgroundColor: '#f5f6ff', color: '#8e8ffa', padding: '6px 12px', borderRadius: '10px', fontSize: '0.75rem', fontWeight: 800 }}>#{h}</span>)}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', borderTop: '1px solid #f8f9fb', paddingTop: '1.2rem' }}>
                     <button onClick={() => onAction(post._id, 'like')} style={{ display: 'flex', alignItems: 'center', gap: '6px', border: 'none', background: 'none', cursor: 'pointer', color: hasLiked ? '#ff7675' : '#b2bec3', fontWeight: 750, transition: '0.2s' }}>
-                        <Heart size={20} fill={hasLiked ? "#ff7675" : "none"} /> {post.likes.length}
+                        <Heart size={20} fill={hasLiked ? "#ff7675" : "none"} /> {post.likes?.length || 0}
                     </button>
                     <button onClick={() => onAction(post._id, 'dislike')} style={{ display: 'flex', alignItems: 'center', gap: '6px', border: 'none', background: 'none', cursor: 'pointer', color: hasDisliked ? '#2d3436' : '#b2bec3', fontWeight: 750, transition: '0.2s' }}>
-                        <ThumbsDown size={20} fill={hasDisliked ? "#2d3436" : "none"} /> {post.dislikes.length}
+                        <ThumbsDown size={20} fill={hasDisliked ? "#2d3436" : "none"} /> {post.dislikes?.length || 0}
                     </button>
                     <button onClick={() => setShowComments(!showComments)} style={{ display: 'flex', alignItems: 'center', gap: '6px', border: 'none', background: 'none', cursor: 'pointer', color: '#b2bec3', fontWeight: 750 }}>
-                        <MessageCircle size={20} /> {post.comments.length}
+                        <MessageCircle size={20} /> {post.comments?.length || 0}
                     </button>
                 </div>
 
@@ -304,7 +329,7 @@ const PostCard = ({ post, onAction, currentUser, onRefresh, setLocalPosts }) => 
                     {showComments && (
                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} style={{ overflow: 'hidden', marginTop: '1.2rem' }}>
                             <div style={{ maxHeight: '180px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px', padding: '10px 0' }}>
-                                {post.comments.map((c, i) => (
+                                {post.comments?.map((c, i) => (
                                     <div key={i} style={{ display: 'flex', gap: '10px' }}>
                                         <div style={{ width: '4px', background: '#f1f2f6', borderRadius: '4px' }}></div>
                                         <div>
@@ -321,25 +346,7 @@ const PostCard = ({ post, onAction, currentUser, onRefresh, setLocalPosts }) => 
                                     style={{ flex: 1, padding: '12px 16px', borderRadius: '15px', border: '1px solid #f1f2f6', outline: 'none', fontSize: '0.9rem', backgroundColor: '#fcfaff' }}
                                 />
                                 <button
-                                    onClick={async () => {
-                                        if (!comment.trim()) return;
-
-                                        // OPTIMISTIC COMMENT
-                                        const newComment = { userName: currentUser.name, text: comment };
-                                        setLocalPosts(prev => prev.map(p => {
-                                            if (p._id !== post._id) return p;
-                                            return { ...p, comments: [...p.comments, newComment] };
-                                        }));
-
-                                        try {
-                                            await postAPI.addComment(post._id, comment);
-                                            setComment('');
-                                            onRefresh(true);
-                                        } catch (err) {
-                                            console.error(err);
-                                            onRefresh(true);
-                                        }
-                                    }}
+                                    onClick={handleAddComment}
                                     style={{ padding: '0 16px', backgroundColor: '#8e8ffa', color: 'white', border: 'none', borderRadius: '15px', fontWeight: 750, cursor: 'pointer' }}
                                 >
                                     Post
