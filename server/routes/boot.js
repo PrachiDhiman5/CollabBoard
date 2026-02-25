@@ -62,8 +62,41 @@ router.get('/', auth, async (req, res) => {
             Promise.all([
                 Room.countDocuments({ $or: [{ host: id }, { participants: id }] }),
                 Room.countDocuments({ $or: [{ host: id }, { participants: id }], isPublic: true })
-            ])
+            ]),
+
+            // 7. Suggestions (Quick logic)
+            Room.find({ $or: [{ host: id }, { participants: id }] })
+                .sort({ updatedAt: -1 })
+                .limit(3)
+                .populate('participants', 'name picture')
+                .lean()
         ]);
+
+        // Process Suggestions (Fast-track)
+        let suggestions = [];
+        if (stats[2] && stats[2].length > 0) {
+            const friendIds = new Set(user.friends.map(f => (f._id || f).toString()));
+            const potentialMap = new Map();
+
+            stats[2].forEach(room => {
+                room.participants.forEach(p => {
+                    const pId = p._id.toString();
+                    if (pId !== userId && !friendIds.has(pId)) {
+                        potentialMap.set(pId, p);
+                    }
+                });
+            });
+            const targetIds = Array.from(potentialMap.keys()).slice(0, 5);
+            if (targetIds.length > 0) {
+                const targetUsers = await User.find({ _id: { $in: targetIds } }).select('friendRequests').lean();
+                suggestions = targetIds.map(tId => {
+                    const p = potentialMap.get(tId);
+                    const tUser = targetUsers.find(u => u._id.toString() === tId);
+                    const isPending = tUser?.friendRequests.some(r => r.from.toString() === userId);
+                    return { ...p, requestStatus: isPending ? 'pending' : 'none' };
+                });
+            }
+        }
 
         const trendingPost = trending.length > 0 ? trending[0] : null;
 
@@ -76,7 +109,7 @@ router.get('/', auth, async (req, res) => {
                 },
                 notifications: user.notifications || [],
                 friends: user.friends || [],
-                suggestions: [] // Handled as secondary or separate if needed
+                suggestions: suggestions
             },
             rooms: {
                 history,

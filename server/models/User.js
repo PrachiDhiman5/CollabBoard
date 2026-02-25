@@ -23,5 +23,9 @@ const userSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+userSchema.index({ friends: 1 });
+userSchema.index({ 'friendRequests.from': 1 });
+
 const User = mongoose.model('User', userSchema);
+
 export default User;
