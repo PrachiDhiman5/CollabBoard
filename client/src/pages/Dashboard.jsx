@@ -19,8 +19,8 @@ const Dashboard = () => {
     const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
     useEffect(() => {
-        fetchRooms(); // This will only fetch if data isn't already cached
-    }, [fetchRooms]);
+        refreshRooms();
+    }, [refreshRooms]);
 
     const handleCreateRoom = async (e) => {
         e.preventDefault();
