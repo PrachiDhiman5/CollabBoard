@@ -25,7 +25,7 @@ const Gallery = () => {
                 postAPI.getTrending(),
                 postAPI.getLeaderboard()
             ]);
-            setPosts(postsRes.data);
+            setPosts(postsRes.data.posts || []); // Fix: Handle paginated response
             setTrending(trendingRes.data);
             setLeaderboard(leaderRes.data);
         } catch (err) {

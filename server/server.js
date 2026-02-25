@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import express from 'express';
+import compression from 'compression';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import http from 'http';
@@ -26,6 +27,7 @@ if (!MONGODB_URI) {
 }
 
 const app = express();
+app.use(compression());
 const server = http.createServer(app);
 
 const allowedOrigins = [

@@ -29,6 +29,7 @@ router.post('/create', auth, async (req, res) => {
 router.get('/public', auth, async (req, res) => {
     try {
         const rooms = await Room.find({ isPublic: true })
+            .select('-objects') // Optimize: Exclude heavy drawing data in list
             .populate('host', 'name picture')
             .sort({ updatedAt: -1 })
             .limit(20)
@@ -49,6 +50,7 @@ router.get('/history', auth, async (req, res) => {
                 { participants: req.user.id }
             ]
         })
+            .select('-objects') // Optimize: Exclude heavy drawing data in list
             .populate('host', 'name picture')
             .sort({ updatedAt: -1 })
             .limit(10)
