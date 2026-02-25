@@ -56,7 +56,7 @@ const Gallery = () => {
             <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '2rem 4rem' }}>
 
                 {/* Hero Spotlight */}
-                {trending.trendingPost && (
+                {trending?.trendingPost && (
                     <motion.div
                         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                         style={{ position: 'relative', height: '450px', borderRadius: '40px', overflow: 'hidden', marginBottom: '4rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}
