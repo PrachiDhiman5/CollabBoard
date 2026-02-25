@@ -4,7 +4,11 @@
     "private": true,
     "scripts": {
         "postinstall": "cd server && npm install",
-        "start": "cd server && npm start",
-        "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+        "start": "cd server && npm start"
+    },
+    "dependencies": {
+        "dotenv": "^17.3.1",
+        "compression": "^1.8.1",
+        "express": "^5.2.1"
     }
 }
