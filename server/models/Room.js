@@ -20,5 +20,9 @@ const roomSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
+roomSchema.index({ updatedAt: -1 });
+roomSchema.index({ host: 1 });
+roomSchema.index({ participants: 1 });
+
 const Room = mongoose.model('Room', roomSchema);
 export default Room;

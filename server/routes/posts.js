@@ -24,11 +24,27 @@ router.post('/', auth, async (req, res) => {
     }
 });
 
-// Get Feed (Sorted by recent)
+// Get Feed (Sorted by recent with pagination)
 router.get('/', async (req, res) => {
     try {
-        const posts = await Post.find().sort({ createdAt: -1 });
-        res.json(posts);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
+        const posts = await Post.find()
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .lean();
+
+        const total = await Post.countDocuments();
+
+        res.json({
+            posts,
+            currentPage: page,
+            totalPages: Math.ceil(total / limit),
+            totalPosts: total
+        });
     } catch (err) {
         res.status(500).json({ message: err.message });
     }

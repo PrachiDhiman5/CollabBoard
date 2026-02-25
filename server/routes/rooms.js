@@ -31,7 +31,8 @@ router.get('/public', auth, async (req, res) => {
         const rooms = await Room.find({ isPublic: true })
             .populate('host', 'name picture')
             .sort({ updatedAt: -1 })
-            .limit(20);
+            .limit(20)
+            .lean();
         res.json(rooms);
     } catch (err) {
         console.error(err);
@@ -50,7 +51,8 @@ router.get('/history', auth, async (req, res) => {
         })
             .populate('host', 'name picture')
             .sort({ updatedAt: -1 })
-            .limit(10);
+            .limit(10)
+            .lean();
         res.json(rooms);
     } catch (err) {
         console.error(err);
