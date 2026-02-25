@@ -18,11 +18,10 @@ const Gallery = () => {
     }, [globalPosts]);
 
     useEffect(() => {
-        fetchPosts();
-        // Background polling for Trending/Leaderboard/Posts every 30s
-        const interval = setInterval(() => refreshGalleryData(true), 30000);
+        refreshGalleryData(false); // Forced refresh on mount (not silent for initial load)
+        const interval = setInterval(() => refreshGalleryData(true), 15000); // High-frequency polling every 15s
         return () => clearInterval(interval);
-    }, [fetchPosts, refreshGalleryData]);
+    }, [refreshGalleryData]);
 
     const handleAction = async (id, action) => {
         const userId = (user._id || user.id);

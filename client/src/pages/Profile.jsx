@@ -35,7 +35,7 @@ const Profile = () => {
     }, [stats?.isTrending]);
 
     useEffect(() => {
-        // fetchProfileData is now handled by the global boot() in DataContext
+        refreshProfile(); // Explicit refresh on mount to avoid stale data
 
         const newSocket = io(SOCKET_URL);
         setSocket(newSocket);
@@ -49,13 +49,13 @@ const Profile = () => {
             refreshProfile(); // Trigger a data refresh when a notification arrives
         });
 
-        const interval = setInterval(refreshProfile, 30000); // Background polling every 30s
+        const interval = setInterval(refreshProfile, 15000); // High-frequency polling every 15s
 
         return () => {
             newSocket.close();
             clearInterval(interval);
         };
-    }, [fetchProfileData]);
+    }, [refreshProfile]);
 
     const handleFriendRequest = async (userId) => {
         try {

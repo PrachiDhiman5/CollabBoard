@@ -115,8 +115,7 @@ export const DataProvider = ({ children }) => {
 
     const refreshPosts = useCallback((silent = false) => refreshGalleryData(silent === true), [refreshGalleryData]);
 
-    const fetchProfileData = useCallback(async (force = false) => {
-        if (!force && profileData !== null) return;
+    const fetchProfileData = useCallback(async () => {
         setLoading(prev => ({ ...prev, profile: true }));
         try {
             const [statsRes, suggestRes, notifRes, friendRes] = await Promise.all([
@@ -134,8 +133,9 @@ export const DataProvider = ({ children }) => {
         } finally {
             setLoading(prev => ({ ...prev, profile: false }));
         }
-    }, [profileData]);
+    }, []);
 
+    const refreshProfile = useCallback(() => fetchProfileData(), [fetchProfileData]);
     const refreshRooms = useCallback(() => fetchRooms(true), [fetchRooms]);
 
     useEffect(() => {
@@ -148,11 +148,11 @@ export const DataProvider = ({ children }) => {
     const value = useMemo(() => ({
         history, publicRooms, posts, trending, leaderboard, profileData,
         suggestedFriends, notifications, friends, loading,
-        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, refreshGalleryData, boot
+        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, refreshGalleryData, refreshProfile, boot
     }), [
         history, publicRooms, posts, trending, leaderboard, profileData,
         suggestedFriends, notifications, friends, loading,
-        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, refreshGalleryData, boot
+        fetchRooms, fetchPosts, fetchProfileData, refreshRooms, refreshPosts, refreshGalleryData, refreshProfile, boot
     ]);
 
     return (
