@@ -59,7 +59,7 @@ const Canvas = forwardRef(({ elements, setElements, activeTool, color, brushSize
             tempCanvas.height = canvas.height;
             const tempCtx = tempCanvas.getContext('2d');
 
-            tempCtx.fillStyle = '#ffffff';
+            tempCtx.fillStyle = '#f8f9fa';
             tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
             tempCtx.drawImage(canvas, 0, 0);
 

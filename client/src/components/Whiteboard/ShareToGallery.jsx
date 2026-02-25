@@ -27,8 +27,8 @@ const ShareToGallery = ({ isOpen, onClose, canvasRef, user }) => {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
 
-                // Fix: Fill with white background (JPEGs don't support transparency and default to black)
-                ctx.fillStyle = '#ffffff';
+                // Fix: Fill with room background color (JPEG conversion will turn transparency to black otherwise)
+                ctx.fillStyle = '#f8f9fa';
                 ctx.fillRect(0, 0, width, height);
 
                 ctx.drawImage(img, 0, 0, width, height);
@@ -43,7 +43,11 @@ const ShareToGallery = ({ isOpen, onClose, canvasRef, user }) => {
 
         setLoading(true);
         try {
-            const rawImage = canvasRef.current.toDataURL('image/png');
+            // FIX: Access the real canvas DOM element via the forwardRef method
+            const realCanvas = canvasRef.current.getCanvas();
+            if (!realCanvas) throw new Error("Canvas not found");
+
+            const rawImage = realCanvas.toDataURL('image/png');
             const compressedImage = await resizeImage(rawImage);
             const hashtagsArray = hashtags.split(' ').filter(h => h.startsWith('#')).map(h => h.slice(1));
 

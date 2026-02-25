@@ -132,9 +132,15 @@ const Gallery = () => {
                             <CreatePostCard onRefresh={refreshPosts} user={user} />
                         </div>
 
-                        {Array.isArray(posts) && posts.map(post => (
-                            <PostCard key={post._id} post={post} onAction={handleAction} currentUser={user} onRefresh={refreshPosts} setLocalPosts={setPosts} />
-                        ))}
+                        {Array.isArray(posts) && posts.length > 0 ? (
+                            posts.map(post => (
+                                <PostCard key={post._id} post={post} onAction={handleAction} currentUser={user} onRefresh={refreshPosts} setLocalPosts={setPosts} />
+                            ))
+                        ) : !globalLoading.posts && (
+                            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '3rem', color: '#b2bec3', fontWeight: 600 }}>
+                                No creations yet. Be the first to post!
+                            </div>
+                        )}
                     </div>
 
                     {/* Sidebar */}
@@ -147,23 +153,27 @@ const Gallery = () => {
                                 <h3 style={{ margin: 0, fontWeight: 800 }}>Top Contributors</h3>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                {Array.isArray(leaderboard) && leaderboard.map((leader, i) => (
-                                    <div key={leader._id} onClick={triggerConfetti} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '10px', borderRadius: '16px', transition: '0.2s' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <div style={{ position: 'relative' }}>
-                                                <img src={leader.userPicture} style={{ width: 40, height: 40, borderRadius: '12px', objectFit: 'cover' }} onError={(e) => e.target.src = `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(leader.userName || 'Artist')}`} />
-                                                {i === 0 && <Trophy size={14} color="#f9ca24" style={{ position: 'absolute', top: -5, right: -5, background: 'white', borderRadius: '50%', padding: '2px' }} />}
+                                {Array.isArray(leaderboard) && leaderboard.length > 0 ? (
+                                    leaderboard.map((leader, i) => (
+                                        <div key={leader._id} onClick={triggerConfetti} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', padding: '10px', borderRadius: '16px', transition: '0.2s' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                                <div style={{ position: 'relative' }}>
+                                                    <img src={leader.userPicture} style={{ width: 40, height: 40, borderRadius: '12px', objectFit: 'cover' }} onError={(e) => e.target.src = `https://api.dicebear.com/7.x/lorelei/svg?seed=${encodeURIComponent(leader.userName || 'Artist')}`} />
+                                                    {i === 0 && <Trophy size={14} color="#f9ca24" style={{ position: 'absolute', top: -5, right: -5, background: 'white', borderRadius: '50%', padding: '2px' }} />}
+                                                </div>
+                                                <div>
+                                                    <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>{leader.userName}</p>
+                                                    <p style={{ margin: 0, fontSize: '0.75rem', color: '#b2bec3', fontWeight: 600 }}>{leader.postCount} posts</p>
+                                                </div>
                                             </div>
-                                            <div>
-                                                <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>{leader.userName}</p>
-                                                <p style={{ margin: 0, fontSize: '0.75rem', color: '#b2bec3', fontWeight: 600 }}>{leader.postCount} posts</p>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#8e8ffa', fontWeight: 800, fontSize: '0.9rem' }}>
+                                                <Heart size={14} fill="#8e8ffa" /> {leader.totalLikes}
                                             </div>
                                         </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#8e8ffa', fontWeight: 800, fontSize: '0.9rem' }}>
-                                            <Heart size={14} fill="#8e8ffa" /> {leader.totalLikes}
-                                        </div>
-                                    </div>
-                                ))}
+                                    ))
+                                ) : (
+                                    <p style={{ fontSize: '0.85rem', color: '#b2bec3', textAlign: 'center' }}>No leaders yet.</p>
+                                )}
                             </div>
                         </div>
 
