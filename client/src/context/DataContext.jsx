@@ -81,18 +81,20 @@ export const DataProvider = ({ children }) => {
         }
     }, [history]);
 
-    const fetchPosts = useCallback(async (force = false) => {
+    const fetchPosts = useCallback(async (force = false, silent = false) => {
         if (!force && posts.length > 0) return;
-        setLoading(prev => ({ ...prev, posts: true }));
+        if (!silent) setLoading(prev => ({ ...prev, posts: true }));
         try {
             const res = await postAPI.getPosts();
             setPosts(res.data.posts || []);
         } catch (err) {
             console.error("Failed to fetch posts:", err);
         } finally {
-            setLoading(prev => ({ ...prev, posts: false }));
+            if (!silent) setLoading(prev => ({ ...prev, posts: false }));
         }
     }, [posts.length]);
+
+    const refreshPosts = useCallback((silent = false) => fetchPosts(true, silent === true), [fetchPosts]);
 
     const fetchProfileData = useCallback(async (force = false) => {
         if (!force && profileData !== null) return;

@@ -122,8 +122,19 @@ const Whiteboard = () => {
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center'
                 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                        <button onClick={() => navigate('/dashboard')} style={{ border: 'none', background: 'none', cursor: 'pointer', padding: '8px', color: '#636e72' }}>
-                            <ChevronLeft size={24} />
+                        <button
+                            onClick={() => navigate('/dashboard')}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '8px',
+                                border: '1px solid #edeff2', background: 'white',
+                                padding: '8px 16px', borderRadius: '12px',
+                                cursor: 'pointer', color: '#636e72', fontWeight: 700,
+                                transition: '0.2s', fontSize: '0.9rem'
+                            }}
+                            onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#f8f9fa'; e.currentTarget.style.borderColor = '#d1d4d7'; }}
+                            onMouseOut={(e) => { e.currentTarget.style.backgroundColor = 'white'; e.currentTarget.style.borderColor = '#edeff2'; }}
+                        >
+                            <ChevronLeft size={18} /> Exit to Dashboard
                         </button>
                         <div>
                             <h3 style={{ margin: 0, fontWeight: 800, fontSize: '1.1rem', color: '#2d3436' }}>{roomData?.name || 'Loading...'}</h3>

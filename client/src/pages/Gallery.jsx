@@ -21,7 +21,7 @@ const Gallery = () => {
         try {
             if (action === 'like') await postAPI.likePost(id);
             else if (action === 'dislike') await postAPI.dislikePost(id);
-            refreshPosts();
+            refreshPosts(true);
         } catch (err) {
             console.error("Action error", err);
         }
@@ -233,9 +233,9 @@ const PostCard = ({ post, onAction, currentUser, onRefresh }) => {
     const [comment, setComment] = useState('');
     const [showComments, setShowComments] = useState(false);
 
-    const currentUserId = currentUser.id || currentUser._id;
-    const hasLiked = Array.isArray(post.likes) && post.likes.some(id => id.toString() === currentUserId?.toString());
-    const hasDisliked = Array.isArray(post.dislikes) && post.dislikes.some(id => id.toString() === currentUserId?.toString());
+    const currentUserId = (currentUser._id || currentUser.id)?.toString();
+    const hasLiked = Array.isArray(post.likes) && post.likes.some(id => id.toString() === currentUserId);
+    const hasDisliked = Array.isArray(post.dislikes) && post.dislikes.some(id => id.toString() === currentUserId);
 
     return (
         <motion.div
