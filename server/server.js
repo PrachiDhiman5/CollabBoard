@@ -184,6 +184,13 @@ io.on('connection', (socket) => {
                 createdAt: new Date()
             });
 
+            // Trigger instant UI refresh for receiver
+            io.to(to).emit('notification', {
+                type: 'message',
+                fromName,
+                text: `New message: ${text.substring(0, 30)}...`
+            });
+
             // Database Persistence
             if (socket.userId) {
                 const newMessage = new Message({

@@ -79,11 +79,12 @@ router.get('/suggested-friends', auth, async (req, res) => {
         const suggestions = targetIds.map(tId => {
             const p = potentialMap.get(tId);
             const tUser = targetUsers.find(u => u._id.toString() === tId);
-            const isPending = tUser?.friendRequests.some(r => r.from.toString() === userId);
+            const isPendingFromMe = tUser?.friendRequests.some(r => r.from.toString() === userId);
+            const isPendingToMe = user.friendRequests?.some(r => r.from.toString() === tId);
 
             return {
                 ...p.toObject(),
-                requestStatus: isPending ? 'pending' : 'none'
+                requestStatus: (isPendingFromMe || isPendingToMe) ? 'pending' : 'none'
             };
         });
 
@@ -105,9 +106,15 @@ router.post('/friend-request/send', auth, async (req, res) => {
         const receiver = await User.findById(toUserId);
         if (!receiver) return res.status(404).json({ message: "User not found" });
 
-        // Check if already friends or request pending
-        const alreadyRequested = receiver.friendRequests.some(r => r.from.toString() === fromUserId);
-        if (alreadyRequested) return res.status(400).json({ message: "Request already sent" });
+        // Check if already friends or request pending (EITHER DIRECTION)
+        const me = await User.findById(fromUserId);
+        const alreadyRequestedByMe = receiver.friendRequests.some(r => r.from.toString() === fromUserId);
+        const alreadyRequestedByThem = me.friendRequests.some(r => r.from.toString() === toUserId);
+        const areAlreadyFriends = receiver.friends.includes(fromUserId);
+
+        if (alreadyRequestedByMe || alreadyRequestedByThem || areAlreadyFriends) {
+            return res.status(400).json({ message: "Relationship already exists or request pending" });
+        }
 
         receiver.friendRequests.push({ from: fromUserId });
 

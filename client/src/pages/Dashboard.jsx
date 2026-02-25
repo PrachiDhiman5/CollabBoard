@@ -20,6 +20,8 @@ const Dashboard = () => {
 
     useEffect(() => {
         refreshRooms();
+        const interval = setInterval(refreshRooms, 30000); // Background polling every 30s
+        return () => clearInterval(interval);
     }, [refreshRooms]);
 
     const handleCreateRoom = async (e) => {

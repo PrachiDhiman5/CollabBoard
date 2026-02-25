@@ -49,7 +49,12 @@ const Profile = () => {
             refreshProfile(); // Trigger a data refresh when a notification arrives
         });
 
-        return () => newSocket.close();
+        const interval = setInterval(refreshProfile, 30000); // Background polling every 30s
+
+        return () => {
+            newSocket.close();
+            clearInterval(interval);
+        };
     }, [fetchProfileData]);
 
     const handleFriendRequest = async (userId) => {
