@@ -41,6 +41,10 @@ export const authAPI = {
     loginWithGoogle: (userData) => api.post('/auth/google', userData),
 };
 
+export const bootAPI = {
+    getBootData: () => api.get('/boot'),
+};
+
 export const roomAPI = {
     createRoom: (roomData) => api.post('/rooms/create', roomData),
     getRoom: (roomId) => api.get(`/rooms/${roomId}`),

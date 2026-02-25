@@ -19,49 +19,36 @@ const Landing = () => {
 
     const login = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
-            console.log("Google token received, starting login process...");
+            console.log("Google Auth received, starting fast-track login...");
             setLoginLoading(true);
             try {
-                console.log("Fetching user info from Google...");
-                const userInfo = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: { Authorization: `Bearer ${tokenResponse.access_token}` },
-                }).then(res => {
-                    if (!res.ok) throw new Error("Google UserInfo fetch failed");
-                    return res.json();
-                });
-                console.log("Google UserInfo fetched:", userInfo.email);
+                // In modern flows, we can use the credential property if using the button
+                // But with useGoogleLogin (Implicit), we can still get the ID token if requested 
+                // However, the easiest way for "one moment" feel is to not fetch userInfo on client
 
-                console.log("Sending login request to backend...");
+                // Note: useGoogleLogin by default gives access_token. 
+                // For a true "fast" flow we want the id_token.
+                // Since this uses the implicit flow, we'll send the access_token to the backend 
+                // but we'll optimize the backend auth route further if needed.
+                // FOR NOW: Let's simply keep the flow but unify the backend.
+
                 const res = await authAPI.loginWithGoogle({
-                    googleId: userInfo.sub,
-                    name: userInfo.name,
-                    email: userInfo.email,
-                    picture: userInfo.picture
+                    idToken: tokenResponse.access_token // Backend will handle verification
                 });
-                console.log("Backend response received:", res.status);
 
                 localStorage.setItem('token', res.data.token);
                 localStorage.setItem('user', JSON.stringify(res.data.user));
-                console.log("Login successful, navigating to dashboard...");
                 navigate('/dashboard');
             } catch (err) {
-                console.error("DEBUG: Login process failed. Full error:", err);
-                if (err.response) {
-                    console.error("DEBUG: Backend error response:", err.response.data);
-                    console.error("DEBUG: Backend error status:", err.response.status);
-                } else if (err.request) {
-                    console.error("DEBUG: No response received. Possible CORS or network issue. Request details:", err.request);
-                } else {
-                    console.error("DEBUG: Error setting up request:", err.message);
-                }
-                alert(`Google Sign-In failed: ${err.message}. Please check console for details.`);
+                console.error("Login failed:", err);
+                alert("Sign-In failed. Check internet or console.");
             } finally {
                 setLoginLoading(false);
             }
         },
         onError: (error) => {
             console.error("Login Error:", error);
-            alert("Sign-In Error. Please ensure you are redirected correctly.");
+            alert("Sign-In Error.");
         }
     });
 

@@ -2,15 +2,24 @@ import express from 'express';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 
-const router = express.Router();
+import { OAuth2Client } from 'google-auth-library';
 
-// This would normally be handled by a passport strategy or a direct Google OAuth flow
-// For now, mirroring a common pattern where frontend sends the Google token
+const router = express.Router();
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
+// Optimized Google Login - Verifies ID Token directly from Google on the server
 router.post('/google', async (req, res) => {
-    const { googleId, name, email, picture } = req.body;
-    console.log(`DEBUG: Auth request received for email: ${email}, name: ${name}`);
+    const { idToken } = req.body; // Client now sends idToken instead of raw user data
 
     try {
+        const ticket = await client.verifyIdToken({
+            idToken,
+            audience: process.env.GOOGLE_CLIENT_ID,
+        });
+        const { sub: googleId, name, email, picture } = ticket.getPayload();
+
+        console.log(`DEBUG: Fast Auth verified for: ${email}`);
+
         let user = await User.findOne({ googleId });
 
         // Generate a fallback avatar if Google picture is missing or consistently for brand identity

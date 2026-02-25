@@ -13,8 +13,10 @@ import { io } from 'socket.io-client';
 import ChatWindow from '../components/Social/ChatWindow';
 
 const Profile = () => {
-    const { profileData, fetchProfileData, refreshProfile, loading: globalLoading } = useData();
-    const { stats, suggestions, notifications, friends } = profileData;
+    const { profileData, fetchProfileData, refreshProfile, loading: globalLoading, notifications, friends, suggestedFriends } = useData();
+    const stats = profileData?.stats || null;
+    const suggestions = suggestedFriends || [];
+    // notifications and friends are now provided directly by context too
     const [activeChat, setActiveChat] = useState(null);
     const [socket, setSocket] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -33,9 +35,7 @@ const Profile = () => {
     }, [stats?.isTrending]);
 
     useEffect(() => {
-        console.log("Profile Mounted. Token:", localStorage.getItem('token') ? "EXISTS" : "MISSING");
-        console.log("LocalUser:", user);
-        fetchProfileData();
+        // fetchProfileData is now handled by the global boot() in DataContext
 
         const newSocket = io(SOCKET_URL);
         setSocket(newSocket);
@@ -65,11 +65,11 @@ const Profile = () => {
         }
     };
 
-    if (globalLoading.profile && !stats) return (
+    if (globalLoading.boot && !stats) return (
         <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#fdfbff' }}>
             <div style={{ textAlign: 'center' }}>
-                <h2 style={{ color: '#8e8ffa', fontWeight: 900 }}>Loading Profile...</h2>
-                <p style={{ color: '#b2bec3', fontWeight: 700 }}>Checking for rooms and achievements</p>
+                <h2 style={{ color: '#8e8ffa', fontWeight: 900 }}>Fast-Tracking...</h2>
+                <p style={{ color: '#b2bec3', fontWeight: 700 }}>Mega-Boot in progress</p>
             </div>
         </div>
     );

@@ -13,6 +13,8 @@ import roomRoutes from './routes/rooms.js';
 import postRoutes from './routes/posts.js';
 import profileRoutes from './routes/profile.js';
 import chatRoutes from './routes/chat.js';
+import bootRoutes from './routes/boot.js';
+
 
 // Diagnostic: List all env keys (not values) for debugging Railway deployment
 console.log('Environment Diagnosis:');
@@ -47,7 +49,8 @@ const io = new Server(server, {
 
 app.use(cors({
     origin: allowedOrigins,
-    credentials: true
+    credentials: true,
+    maxAge: 86400 // Cache preflight requests for 24 hours
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -58,6 +61,8 @@ app.use('/api/rooms', roomRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/boot', bootRoutes);
+
 
 // Basic Route
 app.get('/', (req, res) => {
