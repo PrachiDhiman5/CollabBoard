@@ -139,7 +139,7 @@ export const DataProvider = ({ children }) => {
     const refreshRooms = useCallback(() => fetchRooms(true), [fetchRooms]);
 
     useEffect(() => {
-        const token = localStorage.getItem('token');
+        const token = sessionStorage.getItem('token');
         if (token) {
             boot();
         }

@@ -9,7 +9,7 @@ const ChatWindow = ({ friend, socket, onClose }) => {
     const [isOnline, setIsOnline] = useState(false);
     const scrollRef = useRef();
 
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
     useEffect(() => {
         fetchHistory();

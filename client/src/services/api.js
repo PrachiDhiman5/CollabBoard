@@ -29,8 +29,8 @@ api.interceptors.response.use(
     (error) => {
         if (error.response && error.response.status === 401) {
             // Clear local storage and redirect to landing
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
             window.location.href = '/';
         }
         return Promise.reject(error);

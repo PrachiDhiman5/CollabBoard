@@ -26,7 +26,7 @@ const Whiteboard = () => {
     const [isSharing, setIsSharing] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
     const socketRef = useRef();
-    const user = JSON.parse(localStorage.getItem('user') || '{"name": "Anonymous"}');
+    const user = JSON.parse(sessionStorage.getItem('user') || '{"name": "Anonymous"}');
     const canvasRef = useRef(null);
     const canvasParentRef = useRef(null);
 

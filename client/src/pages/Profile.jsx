@@ -21,7 +21,7 @@ const Profile = () => {
     const [socket, setSocket] = useState(null);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
     useEffect(() => {
         if (stats?.isTrending) {
@@ -130,16 +130,19 @@ const Profile = () => {
                             <h3 style={{ margin: 0, fontWeight: 800 }}>Private Workspaces</h3>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {stats?.privateRooms.map(room => (
-                                <div key={room.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', background: '#f8f9fe', borderRadius: '16px' }}>
-                                    <div>
-                                        <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>{room.name}</p>
-                                        <p style={{ margin: 0, fontSize: '0.75rem', color: '#b2bec3' }}>ID: {room.id}</p>
+                            {Array.isArray(stats?.privateRooms) && stats.privateRooms.length > 0 ? (
+                                stats.privateRooms.map(room => (
+                                    <div key={room.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 18px', background: '#f8f9fe', borderRadius: '16px' }}>
+                                        <div>
+                                            <p style={{ margin: 0, fontWeight: 700, fontSize: '0.9rem' }}>{room.name}</p>
+                                            <p style={{ margin: 0, fontSize: '0.75rem', color: '#b2bec3' }}>ID: {room.id}</p>
+                                        </div>
+                                        <History size={16} color="#b2bec3" />
                                     </div>
-                                    <History size={16} color="#b2bec3" />
-                                </div>
-                            ))}
-                            {stats?.privateRooms.length === 0 && <p style={{ color: '#b2bec3', fontSize: '0.85rem', textAlign: 'center' }}>No private rooms yet.</p>}
+                                ))
+                            ) : (
+                                <p style={{ color: '#b2bec3', fontSize: '0.85rem', textAlign: 'center' }}>No private rooms yet.</p>
+                            )}
                         </div>
                     </div>
 
@@ -150,33 +153,36 @@ const Profile = () => {
                             <h3 style={{ margin: 0, fontWeight: 800 }}>Friends</h3>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            {friends.map(friend => (
-                                <div key={friend._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', background: '#f8f9fe', borderRadius: '20px', border: '1px solid #edeff2', transition: '0.3s' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                        <div style={{ position: 'relative' }}>
-                                            <img src={friend.picture || `https://api.dicebear.com/7.x/lorelei/svg?seed=${friend.name}`} style={{ width: 45, height: 45, borderRadius: '15px', border: '2px solid white', boxShadow: '0 4px 8px rgba(0,0,0,0.05)' }} />
-                                            <div style={{ position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, borderRadius: '50%', backgroundColor: '#00b894', border: '2px solid white' }}></div>
+                            {Array.isArray(friends) && friends.length > 0 ? (
+                                friends.map(friend => (
+                                    <div key={friend._id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', background: '#f8f9fe', borderRadius: '20px', border: '1px solid #edeff2', transition: '0.3s' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                            <div style={{ position: 'relative' }}>
+                                                <img src={friend.picture || `https://api.dicebear.com/7.x/lorelei/svg?seed=${friend.name}`} style={{ width: 45, height: 45, borderRadius: '15px', border: '2px solid white', boxShadow: '0 4px 8px rgba(0,0,0,0.05)' }} />
+                                                <div style={{ position: 'absolute', bottom: -2, right: -2, width: 12, height: 12, borderRadius: '50%', backgroundColor: '#00b894', border: '2px solid white' }}></div>
+                                            </div>
+                                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                                <span style={{ fontWeight: 800, fontSize: '1rem', color: '#2d3436' }}>{friend.name}</span>
+                                                <span style={{ fontSize: '0.7rem', color: '#b2bec3', fontWeight: 600 }}>Active Now</span>
+                                            </div>
                                         </div>
-                                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                            <span style={{ fontWeight: 800, fontSize: '1rem', color: '#2d3436' }}>{friend.name}</span>
-                                            <span style={{ fontSize: '0.7rem', color: '#b2bec3', fontWeight: 600 }}>Active Now</span>
-                                        </div>
+                                        <button
+                                            onClick={() => setActiveChat(friend)}
+                                            style={{
+                                                background: 'white', color: '#8e8ffa', border: '2px solid #f1f2ff',
+                                                padding: '10px', borderRadius: '14px', cursor: 'pointer', transition: '0.2s',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                            }}
+                                            onMouseOver={(e) => { e.target.style.background = '#8e8ffa'; e.target.style.color = 'white'; }}
+                                            onMouseOut={(e) => { e.target.style.background = 'white'; e.target.style.color = '#8e8ffa'; }}
+                                        >
+                                            <MessageCircle size={20} />
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => setActiveChat(friend)}
-                                        style={{
-                                            background: 'white', color: '#8e8ffa', border: '2px solid #f1f2ff',
-                                            padding: '10px', borderRadius: '14px', cursor: 'pointer', transition: '0.2s',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                        }}
-                                        onMouseOver={(e) => { e.target.style.background = '#8e8ffa'; e.target.style.color = 'white'; }}
-                                        onMouseOut={(e) => { e.target.style.background = 'white'; e.target.style.color = '#8e8ffa'; }}
-                                    >
-                                        <MessageCircle size={20} />
-                                    </button>
-                                </div>
-                            ))}
-                            {friends.length === 0 && <p style={{ color: '#b2bec3', fontSize: '0.85rem', textAlign: 'center' }}>No friends yet. Add some!</p>}
+                                ))
+                            ) : (
+                                <p style={{ color: '#b2bec3', fontSize: '0.85rem', textAlign: 'center' }}>No friends yet. Add some!</p>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -191,45 +197,48 @@ const Profile = () => {
                             <h2 style={{ margin: 0, fontWeight: 900 }}>Notifications</h2>
                         </div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {notifications.map(n => (
-                                <div key={n._id} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.5rem', backgroundColor: 'white', borderRadius: '24px', border: '1px solid #f1f2f6', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
-                                    <div style={{ width: 45, height: 45, borderRadius: '14px', backgroundColor: '#f1f2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-                                        <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${n.fromName}`} style={{ width: '100%', height: '100%' }} />
-                                    </div>
-                                    <div style={{ flex: 1 }}>
-                                        <p style={{ margin: 0, fontWeight: 700, color: '#2d3436' }}>
-                                            {n.text}
-                                        </p>
-                                        <span style={{ fontSize: '0.75rem', color: '#b2bec3', fontWeight: 600 }}>{new Date(n.createdAt).toLocaleDateString()}</span>
-                                    </div>
-                                    {n.type === 'friend_request' && (
-                                        <div style={{ display: 'flex', gap: '8px' }}>
-                                            <button
-                                                onClick={() => handleResponse(n.from._id || n.from, 'accept')}
-                                                style={{ border: 'none', background: '#eefcf5', color: '#00b894', padding: '10px', borderRadius: '12px', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                onMouseOver={(e) => e.target.style.background = '#dff9e9'}
-                                                onMouseOut={(e) => e.target.style.background = '#eefcf5'}
-                                            >
-                                                <Check size={20} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleResponse(n.from._id || n.from, 'reject')}
-                                                style={{ border: 'none', background: '#fff5f5', color: '#ff7675', padding: '10px', borderRadius: '12px', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                onMouseOver={(e) => e.target.style.background = '#ffe5e5'}
-                                                onMouseOut={(e) => e.target.style.background = '#fff5f5'}
-                                            >
-                                                <X size={20} />
-                                            </button>
+                            {Array.isArray(notifications) && notifications.length > 0 ? (
+                                notifications.map(n => (
+                                    <div key={n._id} style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', padding: '1.5rem', backgroundColor: 'white', borderRadius: '24px', border: '1px solid #f1f2f6', boxShadow: '0 4px 6px rgba(0,0,0,0.02)' }}>
+                                        <div style={{ width: 45, height: 45, borderRadius: '14px', backgroundColor: '#f1f2ff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                            <img src={`https://api.dicebear.com/7.x/lorelei/svg?seed=${n.fromName}`} style={{ width: '100%', height: '100%' }} />
                                         </div>
-                                    )}
-                                    {n.type === 'friend_request_resolved' && (
-                                        <span style={{ backgroundColor: '#f1f2ff', color: '#8e8ffa', padding: '6px 14px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 800 }}>
-                                            Resolved
-                                        </span>
-                                    )}
-                                </div>
-                            ))}
-                            {notifications.length === 0 && <p style={{ color: '#b2bec3', fontWeight: 600 }}>Clear as a summer sky ☀️</p>}
+                                        <div style={{ flex: 1 }}>
+                                            <p style={{ margin: 0, fontWeight: 700, color: '#2d3436' }}>
+                                                {n.text}
+                                            </p>
+                                            <span style={{ fontSize: '0.75rem', color: '#b2bec3', fontWeight: 600 }}>{new Date(n.createdAt).toLocaleDateString()}</span>
+                                        </div>
+                                        {n.type === 'friend_request' && (
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <button
+                                                    onClick={() => handleResponse(n.from._id || n.from, 'accept')}
+                                                    style={{ border: 'none', background: '#eefcf5', color: '#00b894', padding: '10px', borderRadius: '12px', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    onMouseOver={(e) => e.target.style.background = '#dff9e9'}
+                                                    onMouseOut={(e) => e.target.style.background = '#eefcf5'}
+                                                >
+                                                    <Check size={20} />
+                                                </button>
+                                                <button
+                                                    onClick={() => handleResponse(n.from._id || n.from, 'reject')}
+                                                    style={{ border: 'none', background: '#fff5f5', color: '#ff7675', padding: '10px', borderRadius: '12px', cursor: 'pointer', transition: '0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                    onMouseOver={(e) => e.target.style.background = '#ffe5e5'}
+                                                    onMouseOut={(e) => e.target.style.background = '#fff5f5'}
+                                                >
+                                                    <X size={20} />
+                                                </button>
+                                            </div>
+                                        )}
+                                        {n.type === 'friend_request_resolved' && (
+                                            <span style={{ backgroundColor: '#f1f2ff', color: '#8e8ffa', padding: '6px 14px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 800 }}>
+                                                Resolved
+                                            </span>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                <p style={{ color: '#b2bec3', fontWeight: 600 }}>Clear as a summer sky ☀️</p>
+                            )}
                         </div>
                     </section>
 
@@ -243,31 +252,32 @@ const Profile = () => {
                             <span style={{ backgroundColor: '#f1f2ff', color: '#8e8ffa', padding: '6px 14px', borderRadius: '12px', fontSize: '0.8rem', fontWeight: 800 }}>From Latest Room</span>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '1.5rem' }}>
-                            {suggestions.map(person => (
-                                <div key={person._id} style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '28px', border: '1px solid #f1f2f6', textAlign: 'center' }}>
-                                    <img src={person.picture || `https://api.dicebear.com/7.x/lorelei/svg?seed=${person.name}`} style={{ width: 60, height: 60, borderRadius: '20px', marginBottom: '1rem' }} />
-                                    <h4 style={{ margin: '0 0 1rem 0', fontWeight: 800 }}>{person.name}</h4>
-                                    <button
-                                        onClick={() => handleFriendRequest(person._id)}
-                                        disabled={person.requestStatus === 'pending'}
-                                        style={{
-                                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
-                                            padding: '12px', borderRadius: '15px', border: 'none',
-                                            backgroundColor: person.requestStatus === 'pending' ? '#f1f2f6' : '#8e8ffa',
-                                            color: person.requestStatus === 'pending' ? '#b2bec3' : 'white',
-                                            fontWeight: 700, cursor: person.requestStatus === 'pending' ? 'default' : 'pointer',
-                                            transition: '0.3s'
-                                        }}
-                                    >
-                                        {person.requestStatus === 'pending' ? (
-                                            <>Request Sent</>
-                                        ) : (
-                                            <><UserPlus size={18} /> Add Friend</>
-                                        )}
-                                    </button>
-                                </div>
-                            ))}
-                            {suggestions.length === 0 && (
+                            {Array.isArray(suggestions) && suggestions.length > 0 ? (
+                                suggestions.map(person => (
+                                    <div key={person._id} style={{ backgroundColor: 'white', padding: '1.5rem', borderRadius: '28px', border: '1px solid #f1f2f6', textAlign: 'center' }}>
+                                        <img src={person.picture || `https://api.dicebear.com/7.x/lorelei/svg?seed=${person.name}`} style={{ width: 60, height: 60, borderRadius: '20px', marginBottom: '1rem' }} />
+                                        <h4 style={{ margin: '0 0 1rem 0', fontWeight: 800 }}>{person.name}</h4>
+                                        <button
+                                            onClick={() => handleFriendRequest(person._id)}
+                                            disabled={person.requestStatus === 'pending'}
+                                            style={{
+                                                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                                                padding: '12px', borderRadius: '15px', border: 'none',
+                                                backgroundColor: person.requestStatus === 'pending' ? '#f1f2f6' : '#8e8ffa',
+                                                color: person.requestStatus === 'pending' ? '#b2bec3' : 'white',
+                                                fontWeight: 700, cursor: person.requestStatus === 'pending' ? 'default' : 'pointer',
+                                                transition: '0.3s'
+                                            }}
+                                        >
+                                            {person.requestStatus === 'pending' ? (
+                                                <>Request Sent</>
+                                            ) : (
+                                                <><UserPlus size={18} /> Add Friend</>
+                                            )}
+                                        </button>
+                                    </div>
+                                ))
+                            ) : (
                                 <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '2rem', backgroundColor: '#f8f9fe', borderRadius: '24px', border: '1px dashed #edeff2' }}>
                                     <Users size={32} color="#b2bec3" style={{ marginBottom: '10px', opacity: 0.5 }} />
                                     <p style={{ margin: 0, color: '#b2bec3', fontWeight: 600 }}>No new suggestions from your recent rooms.</p>

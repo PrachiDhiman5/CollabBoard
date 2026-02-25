@@ -16,7 +16,7 @@ const Dashboard = () => {
     const [activeTab, setActiveTab] = useState('history'); // 'history' or 'public'
 
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
     useEffect(() => {
         fetchRooms(); // This will only fetch if data isn't already cached
@@ -42,8 +42,8 @@ const Dashboard = () => {
     };
 
     const handleLogout = () => {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
         window.location.href = '/';
     };
 

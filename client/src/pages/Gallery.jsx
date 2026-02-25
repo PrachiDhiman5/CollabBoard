@@ -10,7 +10,7 @@ const Gallery = () => {
     const { posts: globalPosts, trending, leaderboard, fetchPosts, refreshPosts, refreshGalleryData, loading: globalLoading } = useData();
     const [posts, setPosts] = useState([]);
     const navigate = useNavigate();
-    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const user = JSON.parse(sessionStorage.getItem('user') || '{}');
 
     // Sync local state with global context
     useEffect(() => {

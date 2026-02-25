@@ -36,8 +36,8 @@ const Landing = () => {
                     idToken: tokenResponse.access_token // Backend will handle verification
                 });
 
-                localStorage.setItem('token', res.data.token);
-                localStorage.setItem('user', JSON.stringify(res.data.user));
+                sessionStorage.setItem('token', res.data.token);
+                sessionStorage.setItem('user', JSON.stringify(res.data.user));
                 navigate('/dashboard');
             } catch (err) {
                 console.error("Login failed:", err);
