@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Room from '../models/Room.js';
 import Post from '../models/Post.js';
 import { protect as auth } from '../middleware/auth.js';
+import { appendNotification, recentNotificationsSorted } from '../utils/notifications.js';
 
 const router = express.Router();
 
@@ -22,10 +23,9 @@ router.get('/stats', auth, async (req, res) => {
                 .lean()
         ]);
 
-        // Trending Status (#1)
         const trendingPosts = await Post.aggregate([
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1 } },
+            { $addFields: { likesCount: { $size: { $ifNull: ['$likes', []] } } } },
+            { $sort: { likesCount: -1, createdAt: -1 } },
             { $limit: 1 },
             { $project: { userId: 1 } }
         ]);
@@ -57,8 +57,8 @@ router.get('/suggested-friends', auth, async (req, res) => {
 
         if (!recentRooms || recentRooms.length === 0) return res.json([]);
 
-        const user = await User.findById(id).select('friends');
-        const friendIds = new Set(user.friends.map(f => f.toString()));
+        const user = await User.findById(id).select('friends friendRequests');
+        const friendIds = new Set((user.friends || []).map(f => f.toString()));
 
         const potentialMap = new Map();
         recentRooms.forEach(room => {
@@ -120,7 +120,7 @@ router.post('/friend-request/send', auth, async (req, res) => {
 
         // Notification
         const sender = await User.findById(fromUserId);
-        receiver.notifications.push({
+        appendNotification(receiver, {
             type: 'friend_request',
             from: fromUserId,
             fromName: sender.name,
@@ -152,22 +152,28 @@ router.post('/friend-request/respond', auth, async (req, res) => {
         const requesterId = request.from;
 
         if (action === 'accept') {
-            user.friends.push(requesterId);
+            const requesterIdStr = requesterId.toString();
+            const userIdStr = userId.toString();
+            if (!user.friends.some(fid => fid.toString() === requesterIdStr)) {
+                user.friends.push(requesterId);
+            }
             const requester = await User.findById(requesterId);
-            requester.friends.push(userId);
-
-            requester.notifications.push({
-                type: 'friend_request_accepted',
-                from: userId,
-                fromName: user.name,
-                text: `${user.name} accepted your friend request`
-            });
-
-            await requester.save();
+            if (requester) {
+                if (!requester.friends.some(fid => fid.toString() === userIdStr)) {
+                    requester.friends.push(userId);
+                }
+                appendNotification(requester, {
+                    type: 'friend_request_accepted',
+                    from: userId,
+                    fromName: user.name,
+                    text: `${user.name} accepted your friend request`
+                });
+                await requester.save();
+            }
         } else if (action === 'reject') {
             const requester = await User.findById(requesterId);
             if (requester) {
-                requester.notifications.push({
+                appendNotification(requester, {
                     type: 'friend_request_rejected',
                     from: userId,
                     fromName: user.name,
@@ -199,7 +205,7 @@ router.post('/friend-request/respond', auth, async (req, res) => {
 router.get('/notifications', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user.id).populate('notifications.from', 'name picture');
-        res.json(user.notifications.sort((a, b) => b.createdAt - a.createdAt));
+        res.json(recentNotificationsSorted(user));
     } catch (err) {
         res.status(500).send('Server Error');
     }

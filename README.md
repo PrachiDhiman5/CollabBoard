@@ -1,61 +1,85 @@
-# CollabBoard - Real-Time Collaborative Whiteboard
+# CollabBoard — MERN real-time whiteboard
 
-CollabBoard is a high-performance, visually stunning real-time collaborative whiteboard platform built with the MERN stack. It allows teams to brainstorm, design, and visualize ideas together in a seamless, lag-free environment.
+CollabBoard is a collaborative whiteboard with Google sign-in, Socket.io sync, gallery posts, friends, and optional voice and screen sharing in rooms.
 
-## 🚀 Features
+## Features
 
-- **Google OAuth 2.0 Authentication**: Secure and easy sign-in.
-- **Real-time Synchronization**: Powered by Socket.io for instant updates across all users.
-- **Object-Based Canvas Engine**: Create, move, and edit shapes without losing quality.
-- **Comprehensive Toolset**: Pen, Rectangle, Circle, Line, Arrow, Text, and Sticky Notes.
-- **Live Cursors**: See where everyone else is working in real-time.
-- **Built-in Chat**: Communicate with your team directly inside the room.
-- **Undo/Redo History**: Never lose your progress with state management.
-- **Export to Image**: Save your creative work as high-quality PNGs.
-- **Modern UI/UX**: Beautiful pastel aesthetics with glassmorphism and smooth animations.
+- Google OAuth login and JWT sessions
+- Rooms (public or private), join by room ID with server verification
+- Live canvas, cursors, chat, host moderation hooks
+- Gallery feed, likes, comments, leaderboard, trending spotlight (most liked post), trending hashtags
+- Friends and notifications (recent-only in the API response; stored list is capped)
 
-## 🛠️ Tech Stack
+## Tech stack
 
-- **Frontend**: React.js, Vite, Framer Motion, Lucide React, Socket.io-client.
-- **Backend**: Node.js, Express.js, Socket.io, JWT, Passport.js.
-- **Database**: MongoDB Atlas.
-- **Styling**: Vanilla CSS (Custom properties & Glassmorphism).
+- **Client:** React (Vite), React Router, Socket.io-client, Framer Motion  
+- **Server:** Express 5, Socket.io, Mongoose, JWT  
+- **Database:** MongoDB (Atlas or self-hosted)
 
-## 📦 Setup Instructions
+## Local development
 
 ### Prerequisites
-- Node.js installed on your machine.
-- MongoDB Atlas account.
-- Google Cloud Console project for OAuth credentials.
 
-### Installation
+- Node.js 20+
+- MongoDB URI (e.g. Atlas)
+- Google OAuth client ID for the SPA
+- `JWT_SECRET` for the API
 
-1. **Clone the repository**:
-   ```bash
-   git clone <your-repo-link>
-   cd Capstone_Project
-   ```
+### Server
 
-2. **Backend Setup**:
-   ```bash
-   cd server
-   npm install
-   # Create a .env file based on .env.example and add your credentials
-   npm start
-   ```
+```bash
+cd server
+cp .env.example .env   # if present; otherwise create .env
+# Set MONGODB_URI, JWT_SECRET, CLIENT_URL (e.g. http://localhost:5173)
+npm install
+npm start
+```
 
-3. **Frontend Setup**:
-   ```bash
-   cd ../client
-   npm install
-   # Replace GOOGLE_CLIENT_ID in src/main.jsx
-   npm run dev
-   ```
+### Client
 
-## 🎨 Design Philosophy
+```bash
+cd client
+# Set VITE_API_URL=http://localhost:5000/api (or your API URL)
+npm install
+npm run dev
+```
 
-CollabBoard focuses on a **premium, professional aesthetic** using a curated pastel color palette. We avoided generic 'AI-generated' looks in favor of a clean, modern SaaS vibe that feels both powerful and welcoming.
+Set `VITE_GOOGLE_CLIENT_ID` (or your project’s env name) in `client` as required by `main.jsx`.
 
-## 📄 License
+## Docker (API + static UI + nginx)
 
-This project is licensed under the MIT License.
+Uses **your** MongoDB Atlas URI from the host environment (no Mongo container).
+
+1. Create a `.env` file next to `docker-compose.yml`:
+
+```env
+MONGODB_URI=mongodb+srv://...
+JWT_SECRET=your-long-random-secret
+CLIENT_URL=http://localhost
+WEB_PORT=80
+```
+
+`CLIENT_URL` must match the URL users open in the browser (CORS + Socket.io). For local Docker, `http://localhost` is typical.
+
+2. Build and run:
+
+```bash
+docker compose up --build
+```
+
+- UI: `http://localhost` (or `WEB_PORT`)  
+- Browser calls `/api` and `/socket.io` on the same origin; nginx forwards those to the `api` service.
+
+3. Production notes
+
+- Use a real `CLIENT_URL` (https) for your domain.  
+- Rebuild the `web` image if you change `VITE_API_URL`; the default baked in for Compose is `/api` so same-origin proxying works.  
+- WebRTC (mic/screen) may need TURN servers on restrictive networks; the app uses public STUN only by default.
+
+## Deployment (split)
+
+Common pattern: **Vercel** (or similar) for the client and **Railway/Render/Fly** for the API. Set `VITE_API_URL` on the client to your API base including `/api`, and set `CLIENT_URL` on the server to your deployed SPA origin.
+
+## License
+
+MIT

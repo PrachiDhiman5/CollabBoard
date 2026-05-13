@@ -9,6 +9,7 @@ import http from 'http';
 import { Server } from 'socket.io';
 import User from './models/User.js';
 import Message from './models/Message.js';
+import { appendNotification } from './utils/notifications.js';
 import authRoutes from './routes/auth.js';
 import roomRoutes from './routes/rooms.js';
 import postRoutes from './routes/posts.js';
@@ -36,6 +37,8 @@ const server = http.createServer(app);
 const allowedOrigins = [
     process.env.CLIENT_URL,
     "https://collab-board-rosy.vercel.app",
+    "http://localhost",
+    "http://127.0.0.1",
     "http://localhost:5174",
     "http://localhost:5173"
 ].filter(Boolean);
@@ -205,7 +208,7 @@ io.on('connection', (socket) => {
             if (socket.userId) {
                 const receiver = await User.findById(to);
                 if (receiver) {
-                    receiver.notifications.push({
+                    appendNotification(receiver, {
                         type: 'message',
                         from: socket.userId,
                         fromName,

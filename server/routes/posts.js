@@ -2,6 +2,7 @@ import express from 'express';
 import Post from '../models/Post.js';
 import User from '../models/User.js';
 import { protect as auth } from '../middleware/auth.js';
+import { appendNotification } from '../utils/notifications.js';
 
 const router = express.Router();
 
@@ -28,7 +29,7 @@ router.post('/', auth, async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 10;
+        const limit = Math.min(parseInt(req.query.limit, 10) || 20, 50);
         const skip = (page - 1) * limit;
 
         const posts = await Post.find()
@@ -66,7 +67,7 @@ router.post('/:id/like', auth, async (req, res) => {
             if (post.userId.toString() !== req.user.id) {
                 const owner = await User.findById(post.userId);
                 if (owner) {
-                    owner.notifications.push({
+                    appendNotification(owner, {
                         type: 'like',
                         from: req.user.id,
                         fromName: req.user.name,
@@ -123,7 +124,7 @@ router.post('/:id/comment', auth, async (req, res) => {
         if (post.userId.toString() !== req.user.id) {
             const owner = await User.findById(post.userId);
             if (owner) {
-                owner.notifications.push({
+                appendNotification(owner, {
                     type: 'comment',
                     from: req.user.id,
                     fromName: req.user.name,
@@ -141,40 +142,27 @@ router.post('/:id/comment', auth, async (req, res) => {
     }
 });
 
-// Trending Data (Most likes in 4h + top hashtags)
+// Trending: gallery spotlight = post with the most likes (all-time), ties broken by recency
 router.get('/trending', async (req, res) => {
     try {
-        const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
-
-        // Post with most likes using aggregation
-        const trendingPosts = await Post.aggregate([
-            { $match: { createdAt: { $gte: fourHoursAgo } } },
-            { $addFields: { likesCount: { $size: "$likes" } } },
-            { $sort: { likesCount: -1 } },
-            { $limit: 1 },
-            { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1 } }
-        ]);
-
-        let trendingPost = trendingPosts.length > 0 ? trendingPosts[0] : null;
-
-        // Fallback to all-time top if no recent posts
-        if (!trendingPost) {
-            const allTimeTop = await Post.aggregate([
-                { $addFields: { likesCount: { $size: "$likes" } } },
-                { $sort: { likesCount: -1 } },
+        const [trendingPosts, topHashtags] = await Promise.all([
+            Post.aggregate([
+                { $addFields: { likesCount: { $size: { $ifNull: ['$likes', []] } } } },
+                { $sort: { likesCount: -1, createdAt: -1 } },
                 { $limit: 1 },
-                { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1 } }
-            ]);
-            trendingPost = allTimeTop.length > 0 ? allTimeTop[0] : null;
-        }
-
-        // Top Hashtags (Aggregation)
-        const topHashtags = await Post.aggregate([
-            { $unwind: '$hashtags' },
-            { $group: { _id: '$hashtags', count: { $sum: 1 } } },
-            { $sort: { count: -1 } },
-            { $limit: 10 }
+                { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1, userId: 1 } }
+            ]),
+            Post.aggregate([
+                { $match: { hashtags: { $exists: true, $ne: [] } } },
+                { $unwind: '$hashtags' },
+                { $match: { hashtags: { $nin: [null, ''] } } },
+                { $group: { _id: '$hashtags', count: { $sum: 1 } } },
+                { $sort: { count: -1 } },
+                { $limit: 10 }
+            ])
         ]);
+
+        const trendingPost = trendingPosts.length > 0 ? trendingPosts[0] : null;
 
         res.json({ trendingPost, topHashtags });
     } catch (err) {
@@ -192,7 +180,7 @@ router.get('/leaderboard', async (req, res) => {
                     _id: '$userId',
                     userName: { $first: '$userName' },
                     userPicture: { $first: '$userPicture' },
-                    totalLikes: { $sum: { $size: '$likes' } },
+                    totalLikes: { $sum: { $size: { $ifNull: ['$likes', []] } } },
                     postCount: { $sum: 1 }
                 }
             },

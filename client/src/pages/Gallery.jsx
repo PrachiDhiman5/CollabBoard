@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
 const Gallery = () => {
-    const { posts: globalPosts, trending, leaderboard, fetchPosts, refreshPosts, refreshGalleryData, loading: globalLoading } = useData();
+    const { posts: globalPosts, trending, leaderboard, refreshPosts, refreshGalleryData, loading: globalLoading } = useData();
     const [posts, setPosts] = useState([]);
     const navigate = useNavigate();
     const user = JSON.parse(sessionStorage.getItem('user') || '{}');
@@ -18,8 +18,9 @@ const Gallery = () => {
     }, [globalPosts]);
 
     useEffect(() => {
-        refreshGalleryData(false); // Forced refresh on mount (not silent for initial load)
-        const interval = setInterval(() => refreshGalleryData(true), 15000); // High-frequency polling every 15s
+        // Boot already hydrates gallery; background sync only (avoids duplicate heavy requests on entry)
+        refreshGalleryData(true);
+        const interval = setInterval(() => refreshGalleryData(true), 60000);
         return () => clearInterval(interval);
     }, [refreshGalleryData]);
 
@@ -57,11 +58,9 @@ const Gallery = () => {
         try {
             if (action === 'like') await postAPI.likePost(id);
             else if (action === 'dislike') await postAPI.dislikePost(id);
-            // Refresh EVERYTHING in background to sync with server truth (Trending/Leaderboard/Posts)
-            refreshGalleryData(true);
         } catch (err) {
             console.error("Action error", err);
-            refreshGalleryData(true); // Rollback/Sync on error
+            refreshGalleryData(true);
         }
     };
 
@@ -106,7 +105,7 @@ const Gallery = () => {
                         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
                         style={{ position: 'relative', height: '450px', borderRadius: '40px', overflow: 'hidden', marginBottom: '4rem', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)' }}
                     >
-                        <img src={trending.trendingPost.image} style={{ width: '100%', height: '100%', objectFit: 'cover' }} loading="lazy" />
+                        <img src={trending.trendingPost.image} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain', backgroundColor: '#0f0f12' }} loading="lazy" />
                         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 60%)' }}></div>
 
                         <div style={{ position: 'absolute', bottom: '40px', left: '40px', right: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
@@ -322,7 +321,9 @@ const PostCard = ({ post, onAction, currentUser, onRefresh, setLocalPosts }) => 
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#8e8ffa', opacity: 0.3 }}></div>
             </div>
 
-            <img src={post.image} style={{ width: '100%', height: '320px', objectFit: 'cover' }} loading="lazy" />
+            <div style={{ width: '100%', minHeight: '220px', maxHeight: '520px', backgroundColor: '#f8f9fa', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <img src={post.image} alt="" style={{ width: '100%', maxHeight: '520px', objectFit: 'contain' }} loading="lazy" />
+            </div>
 
             <div style={{ padding: '1.5rem' }}>
                 <p style={{ margin: '0 0 12px 0', fontWeight: 600, color: '#2d3436', lineHeight: 1.4 }}>{post.caption}</p>

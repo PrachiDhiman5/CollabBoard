@@ -1,12 +1,15 @@
 import axios from 'axios';
 
-let baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const envUrl = import.meta.env.VITE_API_URL;
+let baseURL = envUrl || (import.meta.env.DEV ? 'http://localhost:5000/api' : '/api');
 if (baseURL && !baseURL.endsWith('/api')) {
     baseURL = baseURL.endsWith('/') ? `${baseURL}api` : `${baseURL}/api`;
 }
 
-// Derive socket URL from base URL (remove /api)
-export const SOCKET_URL = baseURL.replace(/\/api\/?$/, '');
+// Socket.io expects the HTTP origin (no /api suffix)
+export const SOCKET_URL = baseURL.startsWith('http')
+    ? baseURL.replace(/\/api\/?$/, '')
+    : (typeof window !== 'undefined' ? window.location.origin : '');
 
 const api = axios.create({
     baseURL,
@@ -54,7 +57,7 @@ export const roomAPI = {
 };
 
 export const postAPI = {
-    getPosts: () => api.get('/posts'),
+    getPosts: (params) => api.get('/posts', { params: { limit: 20, ...params } }),
     getTrending: () => api.get('/posts/trending'),
     getLeaderboard: () => api.get('/posts/leaderboard'),
     createPost: (postData) => api.post('/posts', postData),

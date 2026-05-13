@@ -4,6 +4,7 @@ import User from '../models/User.js';
 import Room from '../models/Room.js';
 import Post from '../models/Post.js';
 import mongoose from 'mongoose';
+import { recentNotificationsSorted } from '../utils/notifications.js';
 
 const router = express.Router();
 
@@ -42,33 +43,27 @@ router.get('/', auth, async (req, res) => {
                 .select('-objects')
                 .populate('host', 'name picture')
                 .sort({ updatedAt: -1 })
+                .limit(40)
                 .lean(),
 
-            // 4. Trending Data (4h window with fallback)
-            (async () => {
-                const fourHoursAgo = new Date(Date.now() - 4 * 60 * 60 * 1000);
-                let trending = await Post.aggregate([
-                    { $match: { createdAt: { $gte: fourHoursAgo } } },
-                    { $addFields: { likesCount: { $size: "$likes" } } },
-                    { $sort: { likesCount: -1 } },
-                    { $limit: 1 },
-                    { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1, userId: 1 } }
-                ]);
-
-                if (trending.length === 0) {
-                    trending = await Post.aggregate([
-                        { $addFields: { likesCount: { $size: "$likes" } } },
-                        { $sort: { likesCount: -1 } },
-                        { $limit: 1 },
-                        { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1, userId: 1 } }
-                    ]);
-                }
-                return trending;
-            })(),
-
-            // 5. Leaderboard
+            // 4. Trending spotlight = most liked post (all-time), ties by recency
             Post.aggregate([
-                { $group: { _id: '$userId', userName: { $first: '$userName' }, userPicture: { $first: '$userPicture' }, totalLikes: { $sum: { $size: '$likes' } } } },
+                { $addFields: { likesCount: { $size: { $ifNull: ['$likes', []] } } } },
+                { $sort: { likesCount: -1, createdAt: -1 } },
+                { $limit: 1 },
+                { $project: { image: 1, caption: 1, userName: 1, userPicture: 1, likes: 1, createdAt: 1, userId: 1 } }
+            ]),
+
+            Post.aggregate([
+                {
+                    $group: {
+                        _id: '$userId',
+                        userName: { $first: '$userName' },
+                        userPicture: { $first: '$userPicture' },
+                        totalLikes: { $sum: { $size: { $ifNull: ['$likes', []] } } },
+                        postCount: { $sum: 1 }
+                    }
+                },
                 { $sort: { totalLikes: -1 } },
                 { $limit: 5 }
             ]),
@@ -94,7 +89,9 @@ router.get('/', auth, async (req, res) => {
 
             // 9. Top Hashtags
             Post.aggregate([
+                { $match: { hashtags: { $exists: true, $ne: [] } } },
                 { $unwind: '$hashtags' },
+                { $match: { hashtags: { $nin: [null, ''] } } },
                 { $group: { _id: '$hashtags', count: { $sum: 1 } } },
                 { $sort: { count: -1 } },
                 { $limit: 10 }
@@ -104,7 +101,7 @@ router.get('/', auth, async (req, res) => {
         // Process Suggestions (Fast-track)
         let suggestions = [];
         if (suggestionsRaw && suggestionsRaw.length > 0) {
-            const friendIds = new Set(user.friends.map(f => (f._id || f).toString()));
+            const friendIds = new Set((user.friends || []).map(f => (f._id || f).toString()));
             const potentialMap = new Map();
 
             suggestionsRaw.forEach(room => {
@@ -121,7 +118,9 @@ router.get('/', auth, async (req, res) => {
                 suggestions = targetIds.map(tId => {
                     const p = potentialMap.get(tId);
                     const tUser = targetUsers.find(u => u._id.toString() === tId);
-                    const isPending = tUser?.friendRequests.some(r => r.from.toString() === userId);
+                    const isPendingFromMe = tUser?.friendRequests?.some(r => r.from.toString() === userId);
+                    const isPendingToMe = (user.friendRequests || []).some(r => r.from.toString() === tId);
+                    const isPending = isPendingFromMe || isPendingToMe;
                     return { ...p, requestStatus: isPending ? 'pending' : 'none' };
                 });
             }
@@ -137,7 +136,7 @@ router.get('/', auth, async (req, res) => {
                     privateRooms: (stats[2] || []).map(r => ({ id: r.roomId, name: r.name })),
                     isTrending: trendingPost?.userId?.toString() === userId
                 },
-                notifications: user.notifications || [],
+                notifications: recentNotificationsSorted(user),
                 friends: user.friends || [],
                 suggestions: suggestions
             },

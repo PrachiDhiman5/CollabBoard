@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Users, MessageCircle, ChevronRight, ChevronLeft, MicOff, UserMinus, ShieldAlert, Crown, X } from 'lucide-react';
+import { Send, Users, MessageCircle, MicOff, UserMinus, ShieldAlert, Crown, X, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Chat = ({ socket, roomId, user, participants, hostId }) => {
@@ -8,7 +8,9 @@ const Chat = ({ socket, roomId, user, participants, hostId }) => {
     const [messages, setMessages] = useState([]);
     const [view, setView] = useState('chat'); // 'chat' or 'people'
     const chatEndRef = useRef(null);
-    const isHost = (user.id || user._id) === hostId;
+    const uid = (user.id || user._id)?.toString();
+    const hostStr = hostId != null ? String(hostId) : '';
+    const isHost = uid != null && hostStr !== '' && uid === hostStr;
 
     useEffect(() => {
         if (socket) {
@@ -42,22 +44,21 @@ const Chat = ({ socket, roomId, user, participants, hostId }) => {
 
     const handleSend = (e) => {
         e.preventDefault();
-        if (message.trim()) {
-            const msgData = {
-                id: Date.now(),
-                text: message,
-                name: user.name,
-                picture: user.picture,
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                roomId
-            };
-            socket.emit('send-message', msgData);
-            setMessage('');
-        }
+        if (!socket || !message.trim()) return;
+        const msgData = {
+            id: Date.now(),
+            text: message,
+            name: user.name,
+            picture: user.picture,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            roomId
+        };
+        socket.emit('send-message', msgData);
+        setMessage('');
     };
 
     const handleHostAction = (action, targetId, targetName) => {
-        if (!isHost) return;
+        if (!isHost || !socket) return;
         if (window.confirm(`Are you sure you want to ${action} ${targetName}?`)) {
             socket.emit('host-action', { roomId, action, targetId, targetName });
         }
@@ -77,25 +78,26 @@ const Chat = ({ socket, roomId, user, participants, hostId }) => {
         }}>
             {!isOpen && (
                 <button
+                    type="button"
                     onClick={() => setIsOpen(true)}
                     title="Open Chat"
                     style={{
-                        position: 'absolute',
-                        right: '10px',
-                        width: '40px', height: '40px',
-                        backgroundColor: 'white', border: '1px solid #edeff2',
-                        borderRadius: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        boxShadow: '0 8px 30px rgba(0,0,0,0.12)', zIndex: 101,
-                        color: '#636e72',
-                        transition: 'all 0.2s'
-                    }}
-                    onMouseOver={(e) => {
-                        e.currentTarget.style.color = '#8e8ffa';
-                        e.currentTarget.style.transform = 'scale(1.1)';
-                    }}
-                    onMouseOut={(e) => {
-                        e.currentTarget.style.color = '#636e72';
-                        e.currentTarget.style.transform = 'scale(1)';
+                        position: 'fixed',
+                        right: '14px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        width: '44px',
+                        height: '44px',
+                        backgroundColor: 'white',
+                        border: '1px solid #edeff2',
+                        borderRadius: '12px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                        zIndex: 600,
+                        color: '#636e72'
                     }}
                 >
                     <ChevronLeft size={20} />
@@ -124,9 +126,11 @@ const Chat = ({ socket, roomId, user, participants, hostId }) => {
                 <AnimatePresence>
                     {isOpen && (
                         <motion.div
-                            initial={{ opacity: 0, x: 20 }}
+                            key="chat-panel"
+                            initial={false}
                             animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 20 }}
+                            exit={{ opacity: 0, x: 12 }}
+                            transition={{ duration: 0.15 }}
                             style={{ display: 'flex', flexDirection: 'column', height: '100%', width: '360px' }}
                         >
                             <div style={{
@@ -222,11 +226,11 @@ const Chat = ({ socket, roomId, user, participants, hostId }) => {
                                                             transition={{ repeat: Infinity, duration: 2 }}
                                                             style={{
                                                                 position: 'absolute', inset: -4, borderRadius: '14px',
-                                                                border: '2px solid #8e8ffa', opacity: p.userId === hostId ? 0.3 : 0
+                                                                border: '2px solid #8e8ffa', opacity: (p.userId && String(p.userId) === hostStr) ? 0.3 : 0
                                                             }}
                                                         />
                                                         <img src={p.picture || 'https://via.placeholder.com/150'} style={{ width: 36, height: 36, borderRadius: '12px', position: 'relative' }} />
-                                                        {p.userId === hostId && <div style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#f9ca24', borderRadius: '50%', padding: '2px', zIndex: 1 }}><Crown size={12} color="white" /></div>}
+                                                        {p.userId && String(p.userId) === hostStr && <div style={{ position: 'absolute', top: '-10px', right: '-10px', background: '#f9ca24', borderRadius: '50%', padding: '2px', zIndex: 1 }}><Crown size={12} color="white" /></div>}
                                                     </div>
                                                     <div>
                                                         <p style={{ fontWeight: 700, fontSize: '0.9rem', color: '#2d3436', margin: 0 }}>{p.name}</p>

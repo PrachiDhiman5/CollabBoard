@@ -9,7 +9,7 @@ import ScreenShareManager from '../components/Whiteboard/ScreenShareManager';
 import ShareToGallery from '../components/Whiteboard/ShareToGallery';
 import { roomAPI, SOCKET_URL } from '../services/api';
 import io from 'socket.io-client';
-import { Users, ChevronLeft, Share2 } from 'lucide-react';
+import { ChevronLeft, Share2 } from 'lucide-react';
 
 const Whiteboard = () => {
     const { roomId } = useParams();
@@ -25,7 +25,8 @@ const Whiteboard = () => {
     const [isMicOn, setIsMicOn] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
     const [showShareModal, setShowShareModal] = useState(false);
-    const socketRef = useRef();
+    const [socket, setSocket] = useState(null);
+    const socketRef = useRef(null);
     const user = JSON.parse(sessionStorage.getItem('user') || '{"name": "Anonymous"}');
     const canvasRef = useRef(null);
     const canvasParentRef = useRef(null);
@@ -52,15 +53,17 @@ const Whiteboard = () => {
         };
         fetchRoom();
 
-        socketRef.current = io(SOCKET_URL);
-        socketRef.current.emit('join-room', { roomId, user });
+        const s = io(SOCKET_URL);
+        socketRef.current = s;
+        setSocket(s);
+        s.emit('join-room', { roomId, user });
 
-        socketRef.current.on('elements-sync', (syncedElements) => setElements(syncedElements));
-        socketRef.current.on('cursor-update', ({ id, x, y, name, color }) => {
+        s.on('elements-sync', (syncedElements) => setElements(syncedElements));
+        s.on('cursor-update', ({ id, x, y, name, color }) => {
             setCursors((prev) => ({ ...prev, [id]: { x, y, name, color } }));
         });
-        socketRef.current.on('update-participants', (users) => setParticipants(users));
-        socketRef.current.on('user-disconnected', (id) => {
+        s.on('update-participants', (users) => setParticipants(users));
+        s.on('user-disconnected', (id) => {
             setCursors((prev) => {
                 const next = { ...prev };
                 delete next[id];
@@ -68,12 +71,16 @@ const Whiteboard = () => {
             });
         });
 
-        socketRef.current.on('kicked', () => {
+        s.on('kicked', () => {
             alert("Host has removed you from the room.");
             navigate('/dashboard');
         });
 
-        return () => socketRef.current.disconnect();
+        return () => {
+            s.disconnect();
+            socketRef.current = null;
+            setSocket(null);
+        };
     }, [roomId, navigate]);
 
     // Auto-save logic (debounced)
@@ -101,7 +108,7 @@ const Whiteboard = () => {
     const handleClear = () => {
         if (window.confirm("Clear the entire board?")) {
             setElements([]);
-            socketRef.current.emit('canvas-clear', roomId);
+            socketRef.current?.emit('canvas-clear', roomId);
         }
     };
 
@@ -180,15 +187,21 @@ const Whiteboard = () => {
                     />
 
                     <div style={{ width: '100%', height: '100%', cursor: activeTool === 'select' ? 'default' : 'crosshair' }}>
-                        <Canvas
-                            ref={canvasRef} elements={elements} setElements={setElements} activeTool={activeTool}
-                            color={color}
-                            brushSize={brushSize} setBrushSize={setBrushSize}
-                            eraserSize={eraserSize} setEraserSize={setEraserSize}
-                            socket={socketRef.current} roomId={roomId} user={user}
-                            hostId={roomData?.host?._id || roomData?.host}
-                            containerRef={canvasParentRef}
-                        />
+                        {socket ? (
+                            <Canvas
+                                ref={canvasRef} elements={elements} setElements={setElements} activeTool={activeTool}
+                                color={color}
+                                brushSize={brushSize} setBrushSize={setBrushSize}
+                                eraserSize={eraserSize} setEraserSize={setEraserSize}
+                                socket={socket} roomId={roomId} user={user}
+                                hostId={roomData?.host?._id || roomData?.host}
+                                containerRef={canvasParentRef}
+                            />
+                        ) : (
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#636e72', fontWeight: 700 }}>
+                                Connecting to live session…
+                            </div>
+                        )}
                         {Object.entries(cursors).map(([id, pos]) => <Cursor key={id} {...pos} />)}
                     </div>
                 </div>
@@ -196,7 +209,7 @@ const Whiteboard = () => {
 
             {/* Sidebar Chat */}
             <Chat
-                socket={socketRef.current}
+                socket={socket}
                 roomId={roomId}
                 user={user}
                 participants={participants}
@@ -205,11 +218,11 @@ const Whiteboard = () => {
 
             {/* WebRTC Managers */}
             <VoiceManager
-                socket={socketRef.current} roomId={roomId} user={user}
+                socket={socket} roomId={roomId} user={user}
                 participants={participants} isMicOn={isMicOn}
             />
             <ScreenShareManager
-                socket={socketRef.current} roomId={roomId} user={user}
+                socket={socket} roomId={roomId} user={user}
                 participants={participants} isSharing={isSharing} setIsSharing={setIsSharing}
             />
 

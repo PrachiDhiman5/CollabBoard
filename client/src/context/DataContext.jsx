@@ -56,9 +56,23 @@ export const DataProvider = ({ children }) => {
             console.log("✅ Mega-Boot complete. All systems ready.");
         } catch (err) {
             console.error("Boot sequence failed:", err);
-            // Fallback for failed boot: try individual loaders
-            fetchRooms();
-            fetchPosts();
+            bootRequested.current = false;
+            try {
+                const [historyRes, publicRes] = await Promise.all([
+                    roomAPI.getRoomHistory(),
+                    roomAPI.getPublicRooms()
+                ]);
+                setHistory(historyRes.data);
+                setPublicRooms(publicRes.data);
+            } catch (e) {
+                console.error("Room fallback failed:", e);
+            }
+            try {
+                const res = await postAPI.getPosts();
+                setPosts(res.data.posts || []);
+            } catch (e) {
+                console.error("Posts fallback failed:", e);
+            }
         } finally {
             setLoading(prev => ({ ...prev, boot: false }));
         }
@@ -143,7 +157,7 @@ export const DataProvider = ({ children }) => {
         if (token) {
             boot();
         }
-    }, [boot]);
+    }, []);
 
     const value = useMemo(() => ({
         history, publicRooms, posts, trending, leaderboard, profileData,

@@ -13,6 +13,8 @@ const Dashboard = () => {
     const [newRoomName, setNewRoomName] = useState('');
     const [isPublic, setIsPublic] = useState(false);
     const [joinRoomId, setJoinRoomId] = useState('');
+    const [joinError, setJoinError] = useState('');
+    const [joinLoading, setJoinLoading] = useState(false);
     const [activeTab, setActiveTab] = useState('history'); // 'history' or 'public'
 
     const navigate = useNavigate();
@@ -20,7 +22,7 @@ const Dashboard = () => {
 
     useEffect(() => {
         refreshRooms();
-        const interval = setInterval(refreshRooms, 15000); // High-frequency polling every 15s
+        const interval = setInterval(refreshRooms, 60000);
         return () => clearInterval(interval);
     }, [refreshRooms]);
 
@@ -39,8 +41,25 @@ const Dashboard = () => {
 
     const handleJoinRoom = async (e) => {
         e.preventDefault();
-        if (!joinRoomId) return;
-        navigate(`/room/${joinRoomId}`);
+        const id = joinRoomId.trim();
+        if (!id) return;
+        setJoinError('');
+        setJoinLoading(true);
+        try {
+            await roomAPI.getRoom(id);
+            setShowJoinModal(false);
+            setJoinRoomId('');
+            navigate(`/room/${id}`);
+        } catch (err) {
+            const msg = err.response?.status === 403
+                ? 'This room is private. Ask the host to invite you or make it public.'
+                : err.response?.status === 404
+                    ? 'No room exists with that ID.'
+                    : 'Could not open that room. Check the ID and try again.';
+            setJoinError(msg);
+        } finally {
+            setJoinLoading(false);
+        }
     };
 
     const handleLogout = () => {
@@ -317,12 +336,15 @@ const Dashboard = () => {
                                         value={joinRoomId} onChange={(e) => setJoinRoomId(e.target.value)}
                                         style={{ width: '100%', padding: '1rem', borderRadius: '14px', border: '1px solid #edeff2', outline: 'none' }}
                                     />
+                                    {joinError && (
+                                        <p style={{ color: '#ff7675', fontSize: '0.85rem', fontWeight: 600, marginTop: '0.75rem', marginBottom: 0 }}>{joinError}</p>
+                                    )}
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '1rem' }}>
-                                    <button type="button" onClick={() => setShowJoinModal(false)} style={{ flex: 1, padding: '1rem', borderRadius: '14px', border: 'none', backgroundColor: '#f1f2f6', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
-                                    <button type="submit" style={{ flex: 1, padding: '1rem', borderRadius: '14px', border: 'none', backgroundColor: '#8e8ffa', color: 'white', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(142,143,250,0.3)' }}>
-                                        Verify & Enter
+                                    <button type="button" onClick={() => { setShowJoinModal(false); setJoinError(''); }} style={{ flex: 1, padding: '1rem', borderRadius: '14px', border: 'none', backgroundColor: '#f1f2f6', fontWeight: 700, cursor: 'pointer' }}>Cancel</button>
+                                    <button type="submit" disabled={joinLoading} style={{ flex: 1, padding: '1rem', borderRadius: '14px', border: 'none', backgroundColor: '#8e8ffa', color: 'white', fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 12px rgba(142,143,250,0.3)', opacity: joinLoading ? 0.7 : 1 }}>
+                                        {joinLoading ? 'Checking…' : 'Verify & Enter'}
                                     </button>
                                 </div>
                             </form>

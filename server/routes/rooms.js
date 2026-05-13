@@ -32,6 +32,7 @@ router.get('/public', auth, async (req, res) => {
             .select('-objects') // Optimize: Exclude heavy drawing data in list
             .populate('host', 'name picture')
             .sort({ updatedAt: -1 })
+            .limit(50)
             .lean();
         res.json(rooms);
     } catch (err) {

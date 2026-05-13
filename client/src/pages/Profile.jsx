@@ -49,7 +49,7 @@ const Profile = () => {
             refreshProfile(); // Trigger a data refresh when a notification arrives
         });
 
-        const interval = setInterval(refreshProfile, 15000); // High-frequency polling every 15s
+        const interval = setInterval(refreshProfile, 60000);
 
         return () => {
             newSocket.close();
